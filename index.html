@@ -802,4 +802,1113 @@
 
     #initial-loading-screen.active { display: flex; }
 
-    .init
+    .initial-loading-card { width: min(420px, 100%); text-align: center; }
+    .initial-loading-card .spinner { margin: 0 auto 22px; }
+    .initial-loading-card h1 { font-size: 18px; font-weight: 500; }
+    .initial-loading-card p { margin-top: 8px; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+
+    #upload-modal.active,
+    #loading-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-box {
+      width: 90%;
+      max-width: 450px;
+      border-radius: var(--radius-large);
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .modal-folder-list {
+      height: 220px;
+      overflow-y: auto;
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .modal-folder {
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .modal-folder:hover {
+      background: var(--btn-bg);
+    }
+
+    .breadcrumb {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .breadcrumb span {
+      color: #60a5fa;
+      cursor: pointer;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(255,255,255,.1);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media(max-width: 768px) {
+      header { padding: 0 6px; }
+      .header-left, .header-right { gap: 4px; }
+      button { min-width: 36px; width: 36px; height: 36px; }
+      button svg { width: 16px; height: 16px; }
+      .zoom-controls { padding: 1px; }
+      .zoom-controls button { width: 30px; height: 30px; min-width: 30px; }
+      #zoom-display { min-width: 32px; font-size: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div class="spinner" role="status" aria-label="Uploading"></div>
+</div>
+
+<div id="initial-loading-screen" role="status" aria-live="polite" aria-hidden="true" style="display:none;">
+  <div class="initial-loading-card">
+    <div class="spinner" aria-hidden="true"></div>
+    <h1>Connecting to your workspace</h1>
+    <p id="initial-loading-message">Fetching your files and database pads…</p>
+    <button id="initial-load-retry" type="button" hidden="">Try again</button>
+  </div>
+</div>
+
+<div id="upload-modal" role="dialog" aria-modal="true" aria-label="Upload files" class="modal-overlay">
+  <div class="modal-box neu-card" style="max-width: 620px; max-height: 88dvh; overflow: auto; background: #1e1e24; border: 1px solid rgba(255,255,255,0.22); box-shadow: 0 16px 50px rgba(0,0,0,0.85);">
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <h3 style="display:flex; align-items:center; gap:8px;">
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        <span>Upload Files &amp; Folders</span>
+      </h3>
+      <button id="cancel-upload-btn" type="button" class="neu-btn" title="Close modal">✕</button>
+    </div>
+
+    <!-- Destination Selector -->
+    <div class="neu-inset" style="padding: 10px 14px;">
+      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Destination Folder:</div>
+      <div class="breadcrumb" id="modal-breadcrumb" style="font-size: 13px; font-weight: 600; color: #ffffff;"></div>
+      <div class="modal-folder-list" id="modal-folder-list" style="margin-top:6px; display:flex; gap:6px; overflow-x:auto; padding-bottom:4px;"></div>
+    </div>
+
+    <!-- Inline New Subfolder Creator -->
+    <div style="display:flex; gap:8px;">
+      <div class="neu-inset" style="flex:1; padding:2px;">
+        <input type="text" id="new-folder-name" placeholder="New subfolder name..." maxlength="120" style="width:100%; height:34px; border:none; background:transparent; padding:0 12px; color:#fff; outline:none; font-size:12px;">
+      </div>
+      <button id="create-folder-btn" type="button" class="neu-btn" style="height:38px; font-size:12px;">+ Folder</button>
+    </div>
+
+    <!-- Reactive Dropzone Canvas -->
+    <div class="dropzone neu-inset" id="upload-dropzone" tabindex="0" style="padding: 28px 16px; text-align: center; cursor: pointer; transition: all 0.25s ease;">
+      <svg class="svg-icon" viewBox="0 0 24 24" style="width: 36px; height: 36px; stroke: #ffffff; margin-bottom: 8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+      <p style="font-weight: 600; font-size: 14px; color: #ffffff;">Drag &amp; drop files here, or click to browse</p>
+      <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">Supports single/multiple files, folders, and <strong style="color:#fff;">Ctrl + V</strong> clipboard paste!</p>
+    </div>
+
+    <!-- Pre-Upload Queue List -->
+    <div id="upload-queue-section" style="display:none;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 6px;">
+        <span style="font-size: 12px; font-weight:600; color: var(--text-muted);" id="queue-count-badge">Queued Files (0)</span>
+        <button id="clear-queue-btn" type="button" class="neu-btn" style="height:24px; font-size:11px; padding:0 8px;">Clear Queue</button>
+      </div>
+      <div id="pre-upload-queue-container" style="display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto; padding-right:4px;"></div>
+    </div>
+
+    <!-- Progress Tracker -->
+    <div class="upload-progress-list" id="upload-progress-list"></div>
+
+    <!-- Action Buttons -->
+    <div style="display: flex; gap: 8px; margin-top: 6px;">
+      <button id="confirm-upload-btn" type="button" class="neu-btn neu-btn-primary" style="flex:1;">Choose Files</button>
+      <button id="choose-folder-btn" type="button" class="neu-btn" style="flex:1;">Choose Folder</button>
+      <button id="start-queue-upload-btn" type="button" class="neu-btn neu-btn-primary" style="display:none; flex:1.2;">🚀 Start Upload</button>
+    </div>
+    <input type="file" id="file-input" accept="*/*" multiple="" style="display:none;">
+    <input type="file" id="folder-input" webkitdirectory="" directory="" multiple="" style="display:none;">
+  </div>
+</div>
+
+<header class="glass-panel">
+  <div class="header-left">
+    <button id="sidebar-toggle-btn" class="sidebar-toggle" type="button" aria-label="Toggle file list" aria-pressed="false" title="Close file list"></button>
+    <button id="theme-toggle-btn" class="theme-toggle" type="button" aria-label="Switch to white theme" aria-pressed="false" title="Switch to white theme"></button>
+    <div class="sync-dot" id="sync-indicator"></div>
+  </div>
+  <div class="header-right">
+    <div class="zoom-controls">
+      <button id="zoom-out" aria-label="Zoom out" title="Zoom out">-</button>
+      <span id="zoom-display">100%</span>
+      <button id="zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+    </div>
+    <button id="refresh-btn" aria-label="Refresh files" title="Refresh files" class="">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <polyline points="1 20 1 14 7 14"></polyline>
+        <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"></path>
+        <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"></path>
+      </svg>
+    </button>
+    <button id="download-btn" aria-label="Download file" title="Download file" style="display: flex;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+    </button>
+    <button id="upload-btn" aria-label="Upload file" title="Upload file">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="17 8 12 3 7 8"></polyline>
+        <line x1="12" y1="3" x2="12" y2="15"></line>
+      </svg>
+    </button>
+    <button id="fullscreen-btn" aria-label="Toggle fullscreen" title="Toggle fullscreen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 3 21 3 21 9"></polyline>
+        <polyline points="9 21 3 21 3 15"></polyline>
+        <line x1="21" y1="3" x2="14" y2="10"></line>
+        <line x1="3" y1="21" x2="10" y2="14"></line>
+      </svg>
+    </button>
+    <button id="admin-key-btn" aria-label="Admin Panel" title="Admin Panel (Ctrl+Shift+A)" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<div id="overlay"></div>
+<div id="toast-container" aria-live="polite"></div>
+<div id="debug-panel" aria-live="polite"></div>
+<div id="context-menu" class="glass-panel" role="menu"></div>
+
+<!-- Admin Login Modal -->
+<div id="admin-login-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="admin-login-heading" aria-hidden="true">
+  <div class="admin-modal-card narrow glass-panel">
+    <div class="admin-modal-heading"><h2 id="admin-login-heading">🔐 Admin authentication</h2></div>
+    <p class="admin-modal-copy">Enter the admin password to open the workspace dashboard.</p>
+    <div class="admin-field">
+      <label for="admin-pass-input">Admin password</label>
+      <input type="password" id="admin-pass-input" autocomplete="current-password" required="">
+    </div>
+    <div id="admin-login-status" class="admin-status" role="status" aria-live="polite"></div>
+    <div class="admin-form-actions">
+      <button id="cancel-admin-login-btn" type="button" class="neu-btn">Cancel</button>
+      <button id="confirm-admin-login-btn" type="button" class="neu-btn neu-btn-primary">Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Dashboard Modal -->
+<div id="admin-dash-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="admin-dash-heading">
+  <div class="modal-box neu-card" style="max-width: 820px; max-height: 88dvh; overflow: auto; background: #1c1c22; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 16px 50px rgba(0,0,0,0.85);">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:22px;height:22px;stroke:#fff;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        <h3 id="admin-dash-heading" style="font-size:16px; font-weight:700;">Workspace Admin Dashboard</h3>
+      </div>
+      <button id="close-admin-dash-btn" type="button" class="neu-btn" style="height:32px; font-weight:600;">✕ Close</button>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:12px; margin-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
+      <button id="admin-tab-pads" type="button" class="neu-btn" style="flex:1; height:36px; font-size:12px; font-weight:600;">📝 Database Pads</button>
+      <button id="admin-tab-files" type="button" class="neu-btn neu-btn-primary" style="flex:1; height:36px; font-size:12px; font-weight:600;">🗂️ Drive Files Master List</button>
+      <button id="admin-tab-system" type="button" class="neu-btn" style="flex:1; height:36px; font-size:12px; font-weight:600;">⚙️ System Controls</button>
+    </div>
+
+    <!-- TAB 1: DATABASE PADS -->
+    <div id="admin-panel-pads" style="display: none;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+        <span style="font-size:13px; font-weight:600; color:var(--text-muted);">Master Database Pads Governance</span>
+        <button id="admin-add-pad-btn" type="button" class="neu-btn neu-btn-primary" style="height:32px; font-size:12px;">➕ Create New Pad</button>
+      </div>
+      <div id="admin-pads-table-container" style="display:flex; flex-direction:column; gap:8px; max-height:400px; overflow-y:auto; padding-right:4px;"></div>
+    </div>
+
+    <!-- TAB 2: DRIVE FILES MASTER LIST -->
+    <div id="admin-panel-files" style="display: block;">
+      <div class="admin-files-toolbar">
+        <div>
+          <div style="font-size:15px;font-weight:650;color:#fff;">Drive files and folders</div>
+          <div id="admin-files-count" class="admin-files-count" role="status" aria-live="polite">Loading Drive items...</div>
+        </div>
+        <input type="search" id="admin-file-search" class="admin-files-search" aria-label="Search all Drive file and folder names" placeholder="Search by name or folder path…">
+      </div>
+      <div id="admin-files-table-container" aria-label="Drive files and folders"></div>
+    </div>
+
+    <!-- TAB 3: SYSTEM CONTROLS -->
+    <div id="admin-panel-system" style="display:none;">
+      <div class="neu-inset" style="padding:16px; border-radius:12px; margin-bottom:12px;">
+        <h4 style="font-size:14px; font-weight:600; margin-bottom:6px;">Server Cache Management</h4>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Purge Google Apps Script server cache (`CacheService`) and force all connected browser clients to rebuild live file structures.</p>
+        <button id="admin-purge-cache-btn" type="button" class="neu-btn neu-btn-primary" style="height:36px; font-size:12px;">🔄 Purge Server Cache &amp; Rebuild</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Shortcuts Cheat-Sheet Modal -->
+<div id="shortcuts-modal" class="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal-box" style="max-width: 480px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
+      <h3 style="font-size:16px;">⌨️ Keyboard Shortcuts Guide</h3>
+      <button id="close-shortcuts-btn" type="button" class="neu-btn" style="height:28px; min-width:28px; padding:0;">✕</button>
+    </div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:12px; margin-top:6px; color:#d4d4dc;">
+      <div><kbd style="background:rgba(255,255,255,0.15); padding:2px 6px; border-radius:4px; color:#fff;">Ctrl + K</kbd></div><div>Global Search</div>
+      <div><kbd style="background:rgba(255,255,255,0.15); padding:2px 6px; border-radius:4px; color:#fff;">Ctrl + Shift + A</kbd></div><div>Admin Dashboard</div>
+      <div><kbd style="background:rgba(255,255,255,0.15); padding:2px 6px; border-radius:4px; color:#fff;">Ctrl + Shift + D</kbd></div><div>Debug Log</div>
+      <div><kbd style="background:rgba(255,255,255,0.15); padding:2px 6px; border-radius:4px; color:#fff;">F</kbd></div><div>Toggle Fullscreen</div>
+      <div><kbd style="background:rgba(255,255,255,0.15); padding:2px 6px; border-radius:4px; color:#fff;">Esc</kbd></div><div>Close Modals</div>
+      <div><kbd style="background:rgba(255,255,255,0.15); padding:2px 6px; border-radius:4px; color:#fff;">? or F1</kbd></div><div>Shortcuts Cheat-Sheet</div>
+    </div>
+  </div>
+</div>
+
+<nav id="sidebar" class="glass-panel">
+  <div class="search-container">
+    <input type="search" id="search-bar" aria-label="Search files" placeholder="Search files...">
+    <div class="workspace-tools" aria-label="File view controls">
+      <select id="file-filter" aria-label="Filter files" title="Filter files">
+        <option value="all">All files</option>
+        <option value="document">Documents</option>
+        <option value="image">Images</option>
+        <option value="video">Videos</option>
+        <option value="audio">Audio</option>
+        <option value="application/pdf">PDFs</option>
+      </select>
+      <button id="favorites-filter" type="button" aria-pressed="false" title="Show favorites only">Favorites</button>
+      <button id="view-mode-toggle" type="button" aria-pressed="false" title="Switch to grid view">Grid</button>
+    </div>
+  </div>
+  <div class="sidebar-scroll-area">
+    <div id="tree-container"></div>
+    <div id="search-results"></div>
+  </div>
+  <div class="watermark">
+    <img src="https://ik.imagekit.io/22h7wv5o2/b___Ultra_Detailed_Ima.png?updatedAt=1778874059723" alt="">
+  </div>
+</nav>
+
+<main class="glass-panel">
+  <div id="tab-bar" class="tab-bar" style="display: none;"></div>
+  <div id="placeholder" style="display: flex;">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+      <polyline points="14 2 14 8 20 8"></polyline>
+    </svg>
+    <p style="margin-top:15px;">Select a file from sidebar to view preview</p>
+  </div>
+  <div id="iframe-wrapper" style="transform: none;">
+    <iframe id="file-viewer" title="Preview" loading="lazy" referrerpolicy="no-referrer"></iframe>
+  </div>
+</main>
+
+<script>
+  /* =========================================================
+     DRIVE WORKSPACE JS ENGINE (ULTRA-PREMIUM EDITION)
+     ========================================================= */
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwAAaiT4ZQWMLELgyDYWExAotuoJ3Prdda1t1Mpz2-d4A627yGPXTXJaeFHyTJB3HJMPg/exec";
+  const ROOT_FOLDER_ID = "1ztsTJCXPBFzIYeOLSyZkZebjlTYyB1JK";
+  const CACHE_KEY = "drive_tree_cache_v8";
+  const RECENT_FILES_KEY = "drive_recent_files_v1";
+  const MAX_RECENT_FILES = 8;
+  const SEARCH_HISTORY_KEY = "drive_search_history_v1";
+  const FAVORITES_KEY = "drive_favorites_v1";
+  const VIEW_MODE_KEY = "drive_view_mode_v1";
+
+  let fullTreeData = [];
+  let databaseDocs = [
+    { id: 'pad_1', title: 'Editable Pad 1', content: 'Welcome to Editable Pad 1. Edit this text live from the browser!', isLocked: false },
+    { id: 'pad_2', title: 'Editable Pad 2', content: 'Welcome to Editable Pad 2. Infinite database storage enabled!', isLocked: false },
+    { id: 'pad_3', title: 'Editable Pad 3', content: 'Welcome to Editable Pad 3. Lock with a PIN passcode anytime!', isLocked: false }
+  ];
+  let allFlatFiles = [];
+
+  // MULTI-TAB WORKSPACE STATE
+  let openTabs = [];
+  let activeTabId = null;
+  let activeBlobUrl = null;
+
+  let currentZoom = 100;
+  let activeFileId = null;
+  let folderNavigationPath = [];
+  let activeFile = null;
+  let activeRotation = 0;
+  let currentFilter = 'all';
+  let favoritesOnly = false;
+  const inFlightActions = new Set();
+  const expandedFolderIds = new Set(['db_pads_folder']);
+
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  const treeContainer = document.getElementById('tree-container');
+  const searchResults = document.getElementById('search-results');
+  const fileViewer = document.getElementById('file-viewer');
+  const iframeWrapper = document.getElementById('iframe-wrapper');
+  const placeholder = document.getElementById('placeholder');
+  const searchBar = document.getElementById('search-bar');
+  const downloadBtn = document.getElementById('download-btn');
+  const syncIndicator = document.getElementById('sync-indicator');
+  const uploadModal = document.getElementById('upload-modal');
+  const main = document.querySelector('main');
+  const toastContainer = document.getElementById('toast-container');
+  const debugPanel = document.getElementById('debug-panel');
+  const contextMenu = document.getElementById('context-menu');
+  const tabBar = document.getElementById('tab-bar');
+
+  // ADMIN AUTO-LOCK INACTIVITY TIMER (10 MINUTES)
+  let adminInactivityTimer = null;
+  function resetAdminInactivityTimer() {
+    if (adminInactivityTimer) clearTimeout(adminInactivityTimer);
+    if (adminDashModal && adminDashModal.classList.contains('active')) {
+      adminInactivityTimer = setTimeout(() => {
+        closeAdminDashModal();
+        showToast('Admin session expired due to 10 minutes inactivity', 'info');
+      }, 10 * 60 * 1000);
+    }
+  }
+  ['mousemove', 'keydown', 'click', 'touchstart'].forEach(evt => {
+    window.addEventListener(evt, resetAdminInactivityTimer, { passive: true });
+  });
+
+  function setViewerHtml(htmlContent) {
+    if (activeBlobUrl) {
+      URL.revokeObjectURL(activeBlobUrl);
+      activeBlobUrl = null;
+    }
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    activeBlobUrl = URL.createObjectURL(blob);
+    fileViewer.removeAttribute('srcdoc');
+    fileViewer.src = activeBlobUrl;
+    fileViewer.style.display = 'block';
+  }
+
+  /* =========================================================
+     MULTI-TAB WORKSPACE CONTROLLER
+     ========================================================= */
+  function renderTabBar() {
+    if (!openTabs.length) {
+      tabBar.style.display = 'none';
+      placeholder.style.display = 'flex';
+      fileViewer.style.display = 'none';
+      downloadBtn.style.display = 'none';
+      return;
+    }
+
+    tabBar.style.display = 'flex';
+    placeholder.style.display = 'none';
+    tabBar.innerHTML = '';
+
+    openTabs.forEach(tab => {
+      const tabEl = document.createElement('div');
+      tabEl.className = `tab-item${tab.id === activeTabId ? ' active' : ''}`;
+      
+      const iconSpan = document.createElement('span');
+      iconSpan.textContent = tab.isDbPad ? '📝' : getIcon(tab.mimeType);
+
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'tab-title';
+      titleSpan.textContent = tab.name;
+
+      const closeSpan = document.createElement('span');
+      closeSpan.className = 'tab-close';
+      closeSpan.textContent = '✕';
+      closeSpan.onclick = (e) => {
+        e.stopPropagation();
+        closeTab(tab.id);
+      };
+
+      tabEl.append(iconSpan, titleSpan, closeSpan);
+      tabEl.onclick = () => switchTab(tab.id);
+      tabBar.appendChild(tabEl);
+    });
+  }
+
+  function switchTab(tabId) {
+    const tab = openTabs.find(t => t.id === tabId);
+    if (!tab) return;
+
+    activeTabId = tabId;
+    activeFileId = tab.file.id;
+    activeFile = tab.file;
+    renderTabBar();
+
+    if (tab.isDbPad) {
+      renderDatabasePadStage(tab.docData || tab.file);
+    } else if (tab.renderType === 'media') {
+      renderNativeMediaStage(tab.file, tab.mimeType);
+    } else if (tab.renderType === 'markdown') {
+      renderMarkdownStage(tab.file, tab.content);
+    } else if (tab.renderType === 'code') {
+      renderCodePreviewStage(tab.file, tab.content);
+    } else if (tab.renderType === 'editable') {
+      renderLiveEditableStage(tab.file, tab.content);
+    } else {
+      fileViewer.removeAttribute('srcdoc');
+      fileViewer.src = getViewerSource(tab.id, tab.file);
+    }
+
+    downloadBtn.style.display = 'flex';
+    document.querySelectorAll('.item-row').forEach(r => {
+      r.classList.toggle('active', r.dataset.fileId === String(tab.id));
+    });
+  }
+
+  function closeTab(tabId) {
+    const index = openTabs.findIndex(t => t.id === tabId);
+    if (index === -1) return;
+
+    openTabs.splice(index, 1);
+    if (activeTabId === tabId) {
+      if (openTabs.length) {
+        const nextTab = openTabs[Math.max(0, index - 1)];
+        switchTab(nextTab.id);
+      } else {
+        activeTabId = null;
+        activeFile = null;
+        activeFileId = null;
+        renderTabBar();
+      }
+    } else {
+      renderTabBar();
+    }
+  }
+
+  /* =========================================================
+     ADVANCED PREVIEW / EDITABLE STAGES
+     ========================================================= */
+  function renderNativeMediaStage(file, mimeType) {
+    const id = encodeURIComponent(file.id);
+    const directUrl = `https://drive.google.com/uc?export=view&id=${id}`;
+    const isAudio = mimeType.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(file.name || '');
+    const safeName = String(file.name || 'Media File').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    const playerHtml = `<!doctype html><html><head><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, sans-serif; background: #08080c; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 16px; }
+        .media-card { width: min(720px, 95vw); background: #121218; border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.6); }
+        .media-title { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        video, audio { width: 100%; border-radius: 12px; outline: none; background: #000; }
+        .controls-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; background: rgba(255,255,255,0.04); padding: 10px 14px; border-radius: 10px; font-size: 12px; color: #a1a1aa; }
+        .speed-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: 0.15s; }
+        .speed-btn:hover, .speed-btn.active { background: #fff; color: #000; }
+      </style></head>
+      <body>
+        <div class="media-card">
+          <div class="media-title">${isAudio ? '🎵' : '🎥'} ${safeName}</div>
+          ${isAudio ? `<audio id="player" controls src="${directUrl}"></audio>` : `<video id="player" controls src="${directUrl}"></video>`}
+          <div class="controls-bar">
+            <span>Playback Speed:</span>
+            <div style="display:flex; gap:6px;">
+              <button class="speed-btn" onclick="setSpeed(0.5)">0.5x</button>
+              <button class="speed-btn active" id="spd-1" onclick="setSpeed(1)">1.0x</button>
+              <button class="speed-btn" onclick="setSpeed(1.25)">1.25x</button>
+              <button class="speed-btn" onclick="setSpeed(1.5)">1.5x</button>
+              <button class="speed-btn" onclick="setSpeed(2)">2.0x</button>
+            </div>
+          </div>
+        </div>
+        <script>
+          const p = document.getElementById('player');
+          function setSpeed(s) {
+            p.playbackRate = s;
+            document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+          }
+        <\/script>
+      </body></html>`;
+
+    setViewerHtml(playerHtml);
+  }
+
+  function renderMarkdownStage(file, text) {
+    const safeName = String(file.name || 'Markdown Document').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const safeRawText = JSON.stringify(String(text || ''));
+
+    const mdHtml = `<!doctype html><html><head><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.0/github-markdown-dark.min.css">
+      <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"><\/script>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, sans-serif; background: #0d0d12; color: #e6e6e6; min-height: 100vh; padding: 24px; display: flex; flex-direction: column; align-items: center; }
+        .md-container { width: min(880px, 100%); background: #16161e; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px; box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
+        .markdown-body { background: transparent; color: #e2e2e6; font-size: 14px; line-height: 1.6; }
+        .header-bar { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 20px; font-weight: 600; font-size: 15px; color: #60a5fa; }
+      </style></head>
+      <body>
+        <div class="md-container">
+          <div class="header-bar">📘 ${safeName}</div>
+          <article class="markdown-body" id="content"></article>
+        </div>
+        <script>
+          const raw = ${safeRawText};
+          document.getElementById('content').innerHTML = marked.parse(raw);
+        <\/script>
+      </body></html>`;
+
+    setViewerHtml(mdHtml);
+  }
+
+  function renderCodePreviewStage(file, text) {
+    const safeName = String(file.name || 'Code File').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const ext = String(file.name || '').split('.').pop().toLowerCase();
+    const langMap = { js: 'javascript', json: 'json', html: 'html', css: 'css', py: 'python', sql: 'sql', c: 'clike', cpp: 'cpp', sh: 'bash', xml: 'xml' };
+    const lang = langMap[ext] || 'javascript';
+    const safeCode = String(text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const codeHtml = `<!doctype html><html><head><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"><\/script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"><\/script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"><\/script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"><\/script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"><\/script>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, sans-serif; background: #08080c; color: #f8fafc; min-height: 100vh; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        .bar { display: flex; align-items: center; justify-content: space-between; background: #121218; padding: 10px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); font-weight: 600; font-size: 14px; }
+        pre { border-radius: 12px; border: 1px solid rgba(255,255,255,0.1) !important; background: #0e0e14 !important; margin: 0 !important; font-size: 13px !important; flex: 1; }
+      </style></head>
+      <body>
+        <div class="bar">💻 ${safeName}</div>
+        <pre class="line-numbers"><code class="language-${lang}">${safeCode}</code></pre>
+      </body></html>`;
+
+    setViewerHtml(codeHtml);
+  }
+
+  function renderLiveEditableStage(file, text) {
+    const escaped = String(text ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const safeName = String(file && file.name || 'Text File').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    const stageHtml = `<!doctype html><html><head><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #080808; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; padding: 16px; gap: 12px; }
+        .bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #121212; padding: 10px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+        .title { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .btn { background: #ffffff; color: #000000; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s ease; }
+        .btn:hover { background: #e2e2e6; transform: scale(1.02); }
+        textarea { flex: 1; width: 100%; padding: 16px; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; background: #000000; color: #f8fafc; font-family: "Fira Code", Consolas, monospace; font-size: 14px; line-height: 1.6; resize: none; outline: none; }
+        textarea:focus { border-color: #ffffff; box-shadow: 0 0 12px rgba(255,255,255,0.15); }
+        .status { font-size: 12px; color: #a1a1aa; min-height: 16px; }
+      </style></head>
+      <body>
+        <div class="bar"><span class="title">📝 ${safeName} (Editable Stage)</span><button class="btn" id="save-btn">Save Changes</button></div>
+        <textarea id="live-text" placeholder="Type or edit text here...">${escaped}</textarea>
+        <div class="status" id="status-msg">Changes save in-place. Click "Save Changes" to update Google Drive.</div>
+      </body></html>`;
+
+    setViewerHtml(stageHtml);
+
+    fileViewer.onload = () => {
+      try {
+        const doc = fileViewer.contentWindow.document;
+        const textarea = doc.getElementById('live-text');
+        const saveBtn = doc.getElementById('save-btn');
+        const statusMsg = doc.getElementById('status-msg');
+        if (textarea && saveBtn) {
+          saveBtn.onclick = async () => {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+            if (statusMsg) statusMsg.textContent = 'Saving changes to Google Drive in-place...';
+            try {
+              const base64 = btoa(unescape(encodeURIComponent(textarea.value)));
+              await postCommand('upload', {
+                fileId: (file && file.id && !file.id.startsWith('local-')) ? file.id : undefined,
+                parentId: ROOT_FOLDER_ID,
+                filename: (file && file.name) || 'editable 1.txt',
+                mimeType: 'text/plain',
+                base64: base64
+              });
+              showToast(`Saved ${(file && file.name)} to Google Drive!`, 'success');
+              saveBtn.disabled = false;
+              saveBtn.textContent = 'Save Changes';
+              if (statusMsg) statusMsg.textContent = 'Saved to Google Drive in-place successfully!';
+              await strictRefresh();
+            } catch (err) {
+              saveBtn.disabled = false;
+              saveBtn.textContent = 'Save Changes';
+              if (statusMsg) statusMsg.textContent = 'Save error: ' + (err.message || 'Could not save');
+              showToast(`Save error: ${err.message}`, 'error');
+            }
+          };
+        }
+      } catch(e) {}
+    };
+  }
+
+  /* MAIN FILE LOADING CONTROLLER */
+  function loadFile(fileId, element, file) {
+    const fileObj = file || allFlatFiles.find(item => item.id === fileId) || { id: fileId, name: 'Selected file' };
+    const mime = String(fileObj.mimeType || '').toLowerCase();
+    const name = String(fileObj.name || '').toLowerCase();
+
+    let renderType = 'preview';
+    if (fileObj.isDbPad) {
+      renderType = 'dbPad';
+    } else if (mime.startsWith('audio/') || mime.startsWith('video/') || /\.(mp3|wav|ogg|m4a|aac|flac|mp4|webm|mov|m4v)$/i.test(name)) {
+      renderType = 'media';
+    } else if (/\.(md|markdown)$/i.test(name)) {
+      renderType = 'markdown';
+    } else if (isExplicitlyEditable(fileObj)) {
+      renderType = 'editable';
+    } else if (/\.(json|js|py|sql|html|css|c|cpp|xml|sh|yaml|yml)$/i.test(name)) {
+      renderType = 'code';
+    }
+
+    let tab = openTabs.find(t => t.id === fileId);
+    if (!tab) {
+      tab = {
+        id: fileId,
+        name: fileObj.name || 'File',
+        file: fileObj,
+        mimeType: mime,
+        isDbPad: Boolean(fileObj.isDbPad),
+        docData: fileObj.docData || fileObj,
+        renderType: renderType,
+        content: ''
+      };
+      openTabs.push(tab);
+    }
+
+    activeTabId = fileId;
+
+    if (renderType === 'markdown' || renderType === 'code' || renderType === 'editable') {
+      if (!tab.content) {
+        tab.content = 'Loading file content from Drive...';
+        fetch(`${SCRIPT_URL}?mode=file&id=${encodeURIComponent(fileId)}`)
+          .then(res => res.text())
+          .then(text => {
+            tab.content = text;
+            if (activeTabId === fileId) switchTab(fileId);
+          })
+          .catch(() => {
+            tab.content = getCachedLocalText(fileObj) || 'Could not load file text.';
+            if (activeTabId === fileId) switchTab(fileId);
+          });
+      }
+    }
+
+    switchTab(fileId);
+
+    if (window.innerWidth < 768) {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('active');
+    }
+  }
+
+  function isExplicitlyEditable(file) {
+    if (!file) return false;
+    if (file.isDbPad) return true;
+    const name = String(file.name || '').toLowerCase();
+    if (name.endsWith('.editable') || name.endsWith('.editable.txt')) return true;
+    return false;
+  }
+
+  function getViewerSource(fileId, file) {
+    const mime = String(file && file.mimeType || '').toLowerCase();
+    const name = String(file && file.name || '').toLowerCase();
+    const id = encodeURIComponent(fileId);
+    const direct = `https://drive.google.com/uc?export=view&id=${id}`;
+    const drivePreview = `https://drive.google.com/file/d/${id}/preview`;
+
+    if (mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i.test(name)) return direct;
+    return drivePreview;
+  }
+
+  /* APPS SCRIPT TIMEOUT EXTENSION (12S) WITH AUTO-RETRY */
+  async function fetchWorkspaceJson(url, attempts = 2) {
+    for (let i = 0; i < attempts; i++) {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 12000);
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!response.ok) throw new Error(`Workspace request failed (${response.status})`);
+        return await response.json();
+      } catch (err) {
+        clearTimeout(timeout);
+        if (i === attempts - 1) throw err;
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
+  }
+
+  async function strictRefresh() {
+    if (inFlightActions.has('refresh')) return;
+    inFlightActions.add('refresh');
+    const refreshBtn = document.getElementById('refresh-btn');
+    if (refreshBtn) refreshBtn.classList.add('loading');
+    if (syncIndicator) syncIndicator.classList.add('active');
+
+    try {
+      const [treeRes, dbRes] = await Promise.allSettled([
+        fetchWorkspaceJson(SCRIPT_URL + '?mode=tree&t=' + Date.now()),
+        fetchWorkspaceJson(SCRIPT_URL + '?mode=db&t=' + Date.now())
+      ]);
+
+      if (treeRes.status === 'fulfilled' && Array.isArray(treeRes.value)) {
+        fullTreeData = treeRes.value;
+      }
+      if (dbRes.status === 'fulfilled' && dbRes.value && dbRes.value.status === 'success' && Array.isArray(dbRes.value.docs)) {
+        databaseDocs = dbRes.value.docs;
+      }
+
+      renderTreeData(fullTreeData);
+      renderRecentFiles();
+      const initialScreen = document.getElementById('initial-loading-screen');
+      if (initialScreen) initialScreen.style.display = 'none';
+    } catch(err) {
+      debug('Refresh error', err);
+    } finally {
+      if (refreshBtn) refreshBtn.classList.remove('loading');
+      if (syncIndicator) syncIndicator.classList.remove('active');
+      inFlightActions.delete('refresh');
+    }
+  }
+
+  function renderTreeData(data) {
+    if (!Array.isArray(data)) data = [];
+    allFlatFiles = [];
+
+    const hasDbFolder = data.some(item => item && item.isDbFolder);
+    if (!hasDbFolder) {
+      const pads = Array.isArray(databaseDocs) ? databaseDocs : [];
+      const dbFolderObj = {
+        type: 'folder',
+        id: 'db_pads_folder',
+        name: '📝 Database Pads (Editable)',
+        isDbFolder: true,
+        children: pads.map(doc => ({
+          type: 'file',
+          id: doc.id,
+          name: (doc.title || doc.name) + (doc.isLocked ? ' 🔒' : ' 🔓'),
+          mimeType: 'text/plain',
+          isDbPad: true,
+          docData: doc
+        }))
+      };
+      data = [dbFolderObj, ...data];
+    }
+
+    const frag = document.createDocumentFragment();
+    buildTree(data, frag);
+    treeContainer.innerHTML = '';
+    treeContainer.appendChild(frag);
+  }
+
+  function buildTree(data, container) {
+    const ul = document.createElement('div');
+    data.forEach(item => {
+      if (!item || typeof item !== 'object') return;
+      if (item.type === 'folder') {
+        const row = document.createElement('div');
+        const folderKey = String(item.id || item.name || '');
+        const isExpanded = Boolean(item.isDbFolder || expandedFolderIds.has(folderKey));
+        row.className = `item-row folder-row${isExpanded ? ' open' : ''}`;
+        row.innerHTML = `<span class="arrow">▶</span><span class="icon">${item.isDbFolder ? '📝' : '📁'}</span><span>${item.name}</span>`;
+
+        const children = document.createElement('div');
+        children.className = `folder-group${isExpanded ? ' open' : ''}`;
+        buildTree(Array.isArray(item.children) ? item.children : [], children);
+
+        row.onclick = (e) => {
+          e.stopPropagation();
+          row.classList.toggle('open');
+          children.classList.toggle('open');
+          if (children.classList.contains('open')) expandedFolderIds.add(folderKey);
+          else expandedFolderIds.delete(folderKey);
+        };
+
+        ul.appendChild(row);
+        ul.appendChild(children);
+      } else {
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.dataset.fileId = String(item.id);
+        row.innerHTML = `<span class="icon">${getIcon(item.mimeType, item.isDbPad)}</span><span>${item.name}</span>`;
+        row.onclick = (e) => {
+          e.stopPropagation();
+          loadFile(item.id, row, item);
+        };
+
+        ul.appendChild(row);
+        allFlatFiles.push(item);
+      }
+    });
+    container.appendChild(ul);
+  }
+
+  function loadDatabasePadPreview(doc) {
+    loadFile(doc.id, null, { ...doc, isDbPad: true });
+  }
+
+  function renderDatabasePadStage(doc) {
+    renderLiveEditableStage({ name: doc.title, id: doc.id, isDbPad: true }, doc.content);
+  }
+
+  /* =========================================================
+     ADMIN ENGINE
+     ========================================================= */
+  let currentAdminPass = '';
+  const adminKeyBtn = document.getElementById('admin-key-btn');
+  const adminLoginModal = document.getElementById('admin-login-modal');
+  const adminDashModal = document.getElementById('admin-dash-modal');
+  const adminPassInput = document.getElementById('admin-pass-input');
+  const confirmAdminLoginBtn = document.getElementById('confirm-admin-login-btn');
+  const cancelAdminLoginBtn = document.getElementById('cancel-admin-login-btn');
+  const closeAdminDashBtn = document.getElementById('close-admin-dash-btn');
+
+  const adminTabPads = document.getElementById('admin-tab-pads');
+  const adminTabFiles = document.getElementById('admin-tab-files');
+  const adminTabSystem = document.getElementById('admin-tab-system');
+  const adminPanelPads = document.getElementById('admin-panel-pads');
+  const adminPanelFiles = document.getElementById('admin-panel-files');
+  const adminPanelSystem = document.getElementById('admin-panel-system');
+  const adminPadsTableContainer = document.getElementById('admin-pads-table-container');
+  const adminFilesTableContainer = document.getElementById('admin-files-table-container');
+
+  function openAdminLoginModal() {
+    if (adminPassInput) adminPassInput.value = '';
+    if (adminLoginModal) adminLoginModal.classList.add('active');
+  }
+
+  function closeAdminLoginModal() {
+    if (adminLoginModal) adminLoginModal.classList.remove('active');
+  }
+
+  function closeAdminDashModal() {
+    currentAdminPass = '';
+    if (adminDashModal) adminDashModal.classList.remove('active');
+  }
+
+  if (adminKeyBtn) adminKeyBtn.onclick = openAdminLoginModal;
+  if (cancelAdminLoginBtn) cancelAdminLoginBtn.onclick = closeAdminLoginModal;
+  if (closeAdminDashBtn) closeAdminDashBtn.onclick = closeAdminDashModal;
+
+  function switchAdminTab(tab) {
+    if (!adminTabPads || !adminTabFiles || !adminTabSystem) return;
+    adminTabPads.className = 'neu-btn' + (tab === 'pads' ? ' neu-btn-primary' : '');
+    adminTabFiles.className = 'neu-btn' + (tab === 'files' ? ' neu-btn-primary' : '');
+    adminTabSystem.className = 'neu-btn' + (tab === 'system' ? ' neu-btn-primary' : '');
+
+    if (adminPanelPads) adminPanelPads.style.display = (tab === 'pads' ? 'block' : 'none');
+    if (adminPanelFiles) adminPanelFiles.style.display = (tab === 'files' ? 'block' : 'none');
+    if (adminPanelSystem) adminPanelSystem.style.display = (tab === 'system' ? 'block' : 'none');
+
+    if (tab === 'pads') loadAdminPadsTable();
+    if (tab === 'files') renderAdminFilesTable();
+  }
+
+  if (adminTabPads) adminTabPads.onclick = () => switchAdminTab('pads');
+  if (adminTabFiles) adminTabFiles.onclick = () => switchAdminTab('files');
+  if (adminTabSystem) adminTabSystem.onclick = () => switchAdminTab('system');
+
+  if (confirmAdminLoginBtn) {
+    confirmAdminLoginBtn.onclick = async () => {
+      const pass = adminPassInput ? adminPassInput.value.trim() : '';
+      if (!pass) { showToast('Enter Admin Password', 'error'); return; }
+      showToast('Authenticating with server...', 'info');
+      try {
+        const res = await postCommand('adminVerify', { adminKey: pass });
+        if (res && res.status === 'success') {
+          currentAdminPass = pass;
+          closeAdminLoginModal();
+          if (adminDashModal) adminDashModal.classList.add('active');
+          showToast('Admin Authenticated!', 'success');
+          switchAdminTab('pads');
+        } else {
+          throw new Error(res.message || 'Authentication failed');
+        }
+      } catch (err) {
+        showToast(`Auth Failed: ${err.message}`, 'error');
+      }
+    };
+  }
+
+  async function postCommand(action, payload) {
+    const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action, ...payload }) });
+    const result = await response.json();
+    if (!response.ok || !result || result.status !== 'success') {
+      throw new Error(result && result.message ? result.message : `${action} failed`);
+    }
+    return result;
+  }
+
+  async function loadAdminPadsTable() {
+    if (!currentAdminPass || !adminPadsTableContainer) return;
+    adminPadsTableContainer.innerHTML = '<p style="font-size:12px;color:var(--text-muted);">Fetching database pads...</p>';
+    try {
+      const res = await postCommand('adminGetPads', { adminKey: currentAdminPass });
+      if (res && res.status === 'success' && Array.isArray(res.docs)) {
+        renderAdminPadsTable(res.docs);
+      }
+    } catch (err) {
+      adminPadsTableContainer.innerHTML = `<p style="font-size:12px;color:red;">Error: ${err.message}</p>`;
+    }
+  }
+
+  function renderAdminPadsTable(docs) {
+    if (!adminPadsTableContainer) return;
+    adminPadsTableContainer.innerHTML = '';
+    docs.forEach(doc => {
+      const card = document.createElement('div');
+      card.className = 'item-row neu-card';
+      card.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:10px 14px; margin-bottom:6px; flex-wrap:wrap; gap:8px;';
+      
+      const leftInfo = document.createElement('div');
+      leftInfo.innerHTML = `<strong>📝 ${doc.title}</strong> <span style="font-size:11px; color:#aaa;">(v${doc.version || 1}) - ${doc.isLocked ? '🔒 Locked' : '🔓 Unlocked'}</span>`;
+
+      const btnGroup = document.createElement('div');
+      btnGroup.style.cssText = 'display:flex; gap:6px;';
+
+      const renameBtn = document.createElement('button');
+      renameBtn.type = 'button'; renameBtn.className = 'neu-btn'; renameBtn.textContent = '✏️ Rename';
+      renameBtn.onclick = () => adminRenamePadTitle(doc.id, doc.title);
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button'; deleteBtn.className = 'neu-btn'; deleteBtn.textContent = '🗑️ Delete';
+      deleteBtn.onclick = () => adminDeleteDatabasePad(doc.id, doc.title);
+
+      btnGroup.append(renameBtn, deleteBtn);
+      card.append(leftInfo, btnGroup);
+      adminPadsTableContainer.appendChild(card);
+    });
+  }
+
+  async function adminRenamePadTitle(docId, currentTitle) {
+    const newTitle = prompt('Rename Pad:', currentTitle);
+    if (!newTitle || newTitle === currentTitle) return;
+    try {
+      await postCommand('adminRenamePad', { adminKey: currentAdminPass, docId, title: newTitle.trim() });
+      showToast('Renamed successfully', 'success');
+      loadAdminPadsTable();
+      strictRefresh();
+    } catch(err) { showToast(err.message, 'error'); }
+  }
+
+  async function adminDeleteDatabasePad(docId, title) {
+    if (!confirm(`Delete "${title}"?`)) return;
+    try {
+      await postCommand('adminDeletePad', { adminKey: currentAdminPass, docId });
+      showToast('Deleted pad', 'success');
+      loadAdminPadsTable();
+      strictRefresh();
+    } catch(err) { showToast(err.message, 'error'); }
+  }
+
+  function renderAdminFilesTable() {
+    if (!adminFilesTableContainer) return;
+    adminFilesTableContainer.innerHTML = '';
+    allFlatFiles.forEach(file => {
+      const row = document.createElement('div');
+      row.className = 'admin-file-row';
+      row.innerHTML = `<div><strong>${file.name}</strong></div><div><button class="neu-btn" onclick="window.open('${getViewerSource(file.id, file)}', '_blank')">Open</button></div>`;
+      adminFilesTableContainer.appendChild(row);
+    });
+  }
+
+  /* HELPERS & SHORTCUTS */
+  const shortcutsModal = document.getElementById('shortcuts-modal');
+  const closeShortcutsBtn = document.getElementById('close-shortcuts-btn');
+  if (closeShortcutsBtn) closeShortcutsBtn.onclick = () => shortcutsModal.classList.remove('active');
+
+  function getIcon(mimeType, isDbPad) {
+    if (isDbPad) return '📝';
+    mimeType = typeof mimeType === 'string' ? mimeType : '';
+    if (mimeType.includes('pdf')) return '📕';
+    if (mimeType.includes('image')) return '🖼️';
+    if (mimeType.includes('video')) return '🎥';
+    if (mimeType.includes('audio')) return '🎵';
+    return '📄';
+  }
+
+  function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    toastContainer.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+
+  function debug(msg, err) {
+    console.error(msg, err || '');
+  }
+
+  function getCachedLocalText(file) {
+    try { return localStorage.getItem('localText_' + file.id); } catch(e) { return null; }
+  }
+
+  function renderRecentFiles() {}
+
+  /* KEYBOARD SHORTCUTS */
+  document.addEventListener('keydown', e => {
+    const activeTag = document.activeElement ? document.activeElement.tagName : '';
+    const isEditing = ['INPUT', 'TEXTAREA'].includes(activeTag);
+
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+    }
+
+    if (!isEditing && (e.key === '?' || e.key === 'F1')) {
+      e.preventDefault();
+      shortcutsModal.classList.toggle('active');
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      searchBar.focus();
+    }
+
+    if (!isEditing && e.key.toLowerCase() === 'f') {
+      document.getElementById('fullscreen-btn').click();
+    }
+  });
+
+  document.getElementById('fullscreen-btn').onclick = () => {
+    if (!document.fullscreenElement) main.requestFullscreen();
+    else document.exitFullscreen();
+  };
+
+  document.getElementById('refresh-btn').onclick = strictRefresh;
+  document.getElementById('sidebar-toggle-btn').onclick = () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('active');
+  };
+  overlay.onclick = () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+  };
+
+  /* INITIALIZATION */
+  strictRefresh();
+</script>
+</body>
+</html>
