@@ -350,7 +350,13 @@
       overflow-wrap: anywhere;
     }
 
+    .grid-view > div,
+    .grid-view .folder-group > div,
     .grid-view ul {
+      display: contents;
+    }
+
+    .grid-view .folder-group.open {
       display: contents;
     }
 
@@ -377,6 +383,12 @@
       content: '★';
       color: #facc15;
       margin-left: auto;
+    }
+
+    .item-row .item-label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .grid-view .item-row.favorite::after {
@@ -542,6 +554,22 @@
       background: var(--btn-bg);
     }
 
+    .modal-folder.selected {
+      background: var(--btn-bg);
+      color: var(--text-main);
+    }
+
+    .upload-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .upload-actions button {
+      flex: 1 1 130px;
+    }
+
     @keyframes shimmer { to { background-position: -200% 0; } }
     @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
@@ -682,6 +710,7 @@
       justify-content: center;
       opacity: 0;
       pointer-events: none;
+      visibility: hidden;
       transition: .3s;
       z-index: 2000;
     }
@@ -740,6 +769,9 @@
     .admin-field textarea { min-height: 120px; resize: vertical; }
     .admin-form-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
     .admin-status { min-height: 18px; margin-top: 10px; color: #fca5a5; font-size: 12px; }
+    .admin-tabs { flex-wrap: wrap; }
+    .admin-tabs button { flex: 1 1 140px !important; min-width: 0; white-space: normal; }
+    .admin-pad-toolbar { flex-wrap: wrap; gap: 8px; }
 
     #admin-pads-table-container {
       margin-top: 14px;
@@ -811,6 +843,7 @@
     #loading-overlay.active {
       opacity: 1;
       pointer-events: all;
+      visibility: visible;
     }
 
     .modal-box {
@@ -866,13 +899,29 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     @media(max-width: 768px) {
-      header { padding: 0 6px; }
+      header { padding: 0 6px; height: auto; min-height: 58px; flex-wrap: wrap; overflow: visible; gap: 4px; }
       .header-left, .header-right { gap: 4px; }
-      button { min-width: 36px; width: 36px; height: 36px; }
+      .header-right { flex: 1 1 190px; flex-wrap: wrap; justify-content: flex-end; }
+      button { min-width: 36px; width: auto; max-width: 100%; height: 36px; padding: 0 9px; }
+      .header-right > button { width: 36px; min-width: 36px; padding: 0; }
       button svg { width: 16px; height: 16px; }
       .zoom-controls { padding: 1px; }
       .zoom-controls button { width: 30px; height: 30px; min-width: 30px; }
       #zoom-display { min-width: 32px; font-size: 10px; }
+    }
+
+    @media(max-width: 520px) {
+      header { top: 8px; left: 8px; right: 8px; flex-direction: column; justify-content: center; padding: 6px; }
+      .header-left, .header-right { width: 100%; justify-content: center; }
+      .header-right { flex: 0 1 auto; }
+      main { top: 104px; left: 8px; right: 8px; bottom: 8px; }
+      #sidebar { top: 104px; left: -320px; height: calc(100dvh - 112px); }
+      #sidebar.open { left: 8px; }
+    }
+
+    @media(max-width: 360px) {
+      body.has-active-tab main { top: 142px; }
+      body.has-active-tab #sidebar { top: 142px; height: calc(100dvh - 150px); }
     }
   </style>
 </head>
@@ -936,10 +985,10 @@
     <div class="upload-progress-list" id="upload-progress-list"></div>
 
     <!-- Action Buttons -->
-    <div style="display: flex; gap: 8px; margin-top: 6px;">
-      <button id="confirm-upload-btn" type="button" class="neu-btn neu-btn-primary" style="flex:1;">Choose Files</button>
-      <button id="choose-folder-btn" type="button" class="neu-btn" style="flex:1;">Choose Folder</button>
-      <button id="start-queue-upload-btn" type="button" class="neu-btn neu-btn-primary" style="display:none; flex:1.2;">🚀 Start Upload</button>
+    <div class="upload-actions">
+      <button id="confirm-upload-btn" type="button" class="neu-btn neu-btn-primary">Choose Files</button>
+      <button id="choose-folder-btn" type="button" class="neu-btn">Choose Folder</button>
+      <button id="start-queue-upload-btn" type="button" class="neu-btn neu-btn-primary" style="display:none;">🚀 Start Upload</button>
     </div>
     <input type="file" id="file-input" accept="*/*" multiple="" style="display:none;">
     <input type="file" id="folder-input" webkitdirectory="" directory="" multiple="" style="display:none;">
@@ -1028,7 +1077,7 @@
       </div>
       <button id="close-admin-dash-btn" type="button" class="neu-btn" style="height:32px; font-weight:600;">✕ Close</button>
     </div>
-    <div style="display:flex; gap:8px; margin-top:12px; margin-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
+    <div class="admin-tabs" style="display:flex; gap:8px; margin-top:12px; margin-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
       <button id="admin-tab-pads" type="button" class="neu-btn" style="flex:1; height:36px; font-size:12px; font-weight:600;">📝 Database Pads</button>
       <button id="admin-tab-files" type="button" class="neu-btn neu-btn-primary" style="flex:1; height:36px; font-size:12px; font-weight:600;">🗂️ Drive Files Master List</button>
       <button id="admin-tab-system" type="button" class="neu-btn" style="flex:1; height:36px; font-size:12px; font-weight:600;">⚙️ System Controls</button>
@@ -1036,7 +1085,7 @@
 
     <!-- TAB 1: DATABASE PADS -->
     <div id="admin-panel-pads" style="display: none;">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+      <div class="admin-pad-toolbar" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
         <span style="font-size:13px; font-weight:600; color:var(--text-muted);">Master Database Pads Governance</span>
         <button id="admin-add-pad-btn" type="button" class="neu-btn neu-btn-primary" style="height:32px; font-size:12px;">➕ Create New Pad</button>
       </div>
@@ -1136,6 +1185,16 @@
   const FAVORITES_KEY = "drive_favorites_v1";
   const VIEW_MODE_KEY = "drive_view_mode_v1";
 
+  function loadFavoriteFileIds() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
+      return new Set(Array.isArray(stored) ? stored.map(String) : []);
+    } catch (err) {
+      console.warn('Could not load favorite files', err);
+      return new Set();
+    }
+  }
+
   let fullTreeData = [];
   let databaseDocs = [
     { id: 'pad_1', title: 'Editable Pad 1', content: 'Welcome to Editable Pad 1. Edit this text live from the browser!', isLocked: false },
@@ -1156,6 +1215,9 @@
   let activeRotation = 0;
   let currentFilter = 'all';
   let favoritesOnly = false;
+  let favoriteFileIds = loadFavoriteFileIds();
+  let uploadQueue = [];
+  let uploadDestinationId = ROOT_FOLDER_ID;
   const inFlightActions = new Set();
   const expandedFolderIds = new Set(['db_pads_folder']);
 
@@ -1207,6 +1269,7 @@
      MULTI-TAB WORKSPACE CONTROLLER
      ========================================================= */
   function renderTabBar() {
+    document.body.classList.toggle('has-active-tab', openTabs.length > 0);
     if (!openTabs.length) {
       tabBar.style.display = 'none';
       placeholder.style.display = 'flex';
@@ -1322,20 +1385,20 @@
           <div class="controls-bar">
             <span>Playback Speed:</span>
             <div style="display:flex; gap:6px;">
-              <button class="speed-btn" onclick="setSpeed(0.5)">0.5x</button>
-              <button class="speed-btn active" id="spd-1" onclick="setSpeed(1)">1.0x</button>
-              <button class="speed-btn" onclick="setSpeed(1.25)">1.25x</button>
-              <button class="speed-btn" onclick="setSpeed(1.5)">1.5x</button>
-              <button class="speed-btn" onclick="setSpeed(2)">2.0x</button>
+              <button class="speed-btn" onclick="setSpeed(0.5, this)">0.5x</button>
+              <button class="speed-btn active" id="spd-1" onclick="setSpeed(1, this)">1.0x</button>
+              <button class="speed-btn" onclick="setSpeed(1.25, this)">1.25x</button>
+              <button class="speed-btn" onclick="setSpeed(1.5, this)">1.5x</button>
+              <button class="speed-btn" onclick="setSpeed(2, this)">2.0x</button>
             </div>
           </div>
         </div>
         <script>
           const p = document.getElementById('player');
-          function setSpeed(s) {
+          function setSpeed(s, button) {
             p.playbackRate = s;
             document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
+            button.classList.add('active');
           }
         <\/script>
       </body></html>`;
@@ -1439,18 +1502,44 @@
             saveBtn.textContent = 'Saving...';
             if (statusMsg) statusMsg.textContent = 'Saving changes to Google Drive in-place...';
             try {
-              const base64 = btoa(unescape(encodeURIComponent(textarea.value)));
-              await postCommand('upload', {
-                fileId: (file && file.id && !file.id.startsWith('local-')) ? file.id : undefined,
-                parentId: ROOT_FOLDER_ID,
-                filename: (file && file.name) || 'editable 1.txt',
-                mimeType: 'text/plain',
-                base64: base64
-              });
-              showToast(`Saved ${(file && file.name)} to Google Drive!`, 'success');
+              if (file && file.isDbPad) {
+                const doc = databaseDocs.find(item => String(item.id) === String(file.id));
+                const pin = doc && doc.isLocked ? prompt('This pad is locked. Enter its PIN to save changes:') : '';
+                if (doc && doc.isLocked && pin === null) {
+                  saveBtn.disabled = false;
+                  saveBtn.textContent = 'Save Changes';
+                  return;
+                }
+                const result = await postCommand('saveDoc', {
+                  docId: file.id,
+                  title: file.name || 'Editable Pad',
+                  content: textarea.value,
+                  pin: pin || ''
+                });
+                const savedDoc = databaseDocs.find(item => String(item.id) === String(file.id));
+                if (savedDoc) {
+                  savedDoc.content = textarea.value;
+                  savedDoc.version = result.version || savedDoc.version;
+                }
+                const tab = openTabs.find(item => String(item.id) === String(file.id));
+                if (tab && tab.docData) tab.docData.content = textarea.value;
+                showToast(`Saved ${file.name || 'database pad'}`, 'success');
+              } else {
+                const base64 = btoa(unescape(encodeURIComponent(textarea.value)));
+                await postCommand('upload', {
+                  fileId: (file && file.id && !String(file.id).startsWith('local-')) ? file.id : undefined,
+                  parentId: ROOT_FOLDER_ID,
+                  filename: (file && file.name) || 'editable 1.txt',
+                  mimeType: 'text/plain',
+                  base64: base64
+                });
+                showToast(`Saved ${(file && file.name)} to Google Drive!`, 'success');
+              }
               saveBtn.disabled = false;
               saveBtn.textContent = 'Save Changes';
-              if (statusMsg) statusMsg.textContent = 'Saved to Google Drive in-place successfully!';
+              if (statusMsg) statusMsg.textContent = file && file.isDbPad
+                ? 'Saved to the workspace database successfully!'
+                : 'Saved to Google Drive in-place successfully!';
               await strictRefresh();
             } catch (err) {
               saveBtn.disabled = false;
@@ -1460,7 +1549,10 @@
             }
           };
         }
-      } catch(e) {}
+      } catch (err) {
+        debug('Could not initialize the text editor', err);
+        showToast(`Could not open editor: ${err.message}`, 'error');
+      }
     };
   }
 
@@ -1504,13 +1596,18 @@
       if (!tab.content) {
         tab.content = 'Loading file content from Drive...';
         fetch(`${SCRIPT_URL}?mode=file&id=${encodeURIComponent(fileId)}`)
-          .then(res => res.text())
+          .then(res => {
+            if (!res.ok) throw new Error(`File request failed (${res.status})`);
+            return res.text();
+          })
           .then(text => {
             tab.content = text;
             if (activeTabId === fileId) switchTab(fileId);
           })
-          .catch(() => {
+          .catch(err => {
             tab.content = getCachedLocalText(fileObj) || 'Could not load file text.';
+            debug(`Could not load ${fileObj.name || 'file'}`, err);
+            showToast(`Could not load file content: ${err.message}`, 'error');
             if (activeTabId === fileId) switchTab(fileId);
           });
       }
@@ -1541,6 +1638,39 @@
 
     if (mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i.test(name)) return direct;
     return drivePreview;
+  }
+
+  function downloadFile(file) {
+    if (!file || !file.id) {
+      showToast('Select a file before downloading', 'error');
+      return;
+    }
+    if (file.isDbPad) {
+      const tab = openTabs.find(item => String(item.id) === String(file.id));
+      const liveContent = String(activeTabId) === String(file.id) &&
+        fileViewer.contentDocument && fileViewer.contentDocument.getElementById('live-text');
+      const content = liveContent
+        ? liveContent.value
+        : tab && tab.docData && tab.docData.content || (file.docData && file.docData.content) || file.content || '';
+      const blobUrl = URL.createObjectURL(new Blob([content], { type: 'text/plain;charset=utf-8' }));
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      const title = file.docData && file.docData.title || file.title || file.name || 'database-pad';
+      link.download = `${String(title).replace(/\.txt$/i, '')}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      return;
+    }
+    const link = document.createElement('a');
+    link.href = `https://drive.google.com/uc?export=download&id=${encodeURIComponent(file.id)}`;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.download = String(file.name || '');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   }
 
   /* APPS SCRIPT TIMEOUT EXTENSION (12S) WITH AUTO-RETRY */
@@ -1574,19 +1704,40 @@
         fetchWorkspaceJson(SCRIPT_URL + '?mode=db&t=' + Date.now())
       ]);
 
+      if (treeRes.status === 'rejected' && dbRes.status === 'rejected') {
+        const reason = treeRes.reason || dbRes.reason;
+        throw new Error(`Could not load workspace data: ${reason && reason.message || reason}`);
+      }
       if (treeRes.status === 'fulfilled' && Array.isArray(treeRes.value)) {
         fullTreeData = treeRes.value;
+      } else if (treeRes.status === 'rejected') {
+        debug('Could not refresh Drive files', treeRes.reason);
+        showToast(`Drive files could not be refreshed: ${treeRes.reason.message}`, 'error');
       }
       if (dbRes.status === 'fulfilled' && dbRes.value && dbRes.value.status === 'success' && Array.isArray(dbRes.value.docs)) {
         databaseDocs = dbRes.value.docs;
+      } else if (dbRes.status === 'rejected') {
+        debug('Could not refresh database pads', dbRes.reason);
+        showToast(`Database pads could not be refreshed: ${dbRes.reason.message}`, 'error');
       }
 
       renderTreeData(fullTreeData);
       renderRecentFiles();
       const initialScreen = document.getElementById('initial-loading-screen');
       if (initialScreen) initialScreen.style.display = 'none';
+      const retryButton = document.getElementById('initial-load-retry');
+      if (retryButton) retryButton.hidden = true;
     } catch(err) {
       debug('Refresh error', err);
+      if (!fullTreeData.length && !treeContainer.children.length) {
+        const initialScreen = document.getElementById('initial-loading-screen');
+        const message = document.getElementById('initial-loading-message');
+        const retry = document.getElementById('initial-load-retry');
+        if (initialScreen) initialScreen.style.display = 'flex';
+        if (message) message.textContent = err.message || 'Could not connect to the workspace.';
+        if (retry) retry.hidden = false;
+      }
+      showToast(`Refresh failed: ${err.message}`, 'error');
     } finally {
       if (refreshBtn) refreshBtn.classList.remove('loading');
       if (syncIndicator) syncIndicator.classList.remove('active');
@@ -1622,6 +1773,8 @@
     buildTree(data, frag);
     treeContainer.innerHTML = '';
     treeContainer.appendChild(frag);
+    renderCurrentFileList();
+    applyViewMode();
   }
 
   function buildTree(data, container) {
@@ -1633,6 +1786,9 @@
         const folderKey = String(item.id || item.name || '');
         const isExpanded = Boolean(item.isDbFolder || expandedFolderIds.has(folderKey));
         row.className = `item-row folder-row${isExpanded ? ' open' : ''}`;
+        row.tabIndex = 0;
+        row.setAttribute('role', 'button');
+        row.setAttribute('aria-expanded', String(isExpanded));
         row.innerHTML = `<span class="arrow">▶</span><span class="icon">${item.isDbFolder ? '📝' : '📁'}</span><span>${item.name}</span>`;
 
         const children = document.createElement('div');
@@ -1643,8 +1799,15 @@
           e.stopPropagation();
           row.classList.toggle('open');
           children.classList.toggle('open');
+          row.setAttribute('aria-expanded', String(children.classList.contains('open')));
           if (children.classList.contains('open')) expandedFolderIds.add(folderKey);
           else expandedFolderIds.delete(folderKey);
+        };
+        row.onkeydown = (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            row.click();
+          }
         };
 
         ul.appendChild(row);
@@ -1653,10 +1816,21 @@
         const row = document.createElement('div');
         row.className = 'item-row';
         row.dataset.fileId = String(item.id);
+        row.tabIndex = 0;
+        row.setAttribute('role', 'button');
+        row.setAttribute('aria-label', `Open ${String(item.name || 'Unnamed file')}`);
+        if (favoriteFileIds.has(String(item.id))) row.classList.add('favorite');
         row.innerHTML = `<span class="icon">${getIcon(item.mimeType, item.isDbPad)}</span><span>${item.name}</span>`;
         row.onclick = (e) => {
           e.stopPropagation();
           loadFile(item.id, row, item);
+        };
+        row.oncontextmenu = (e) => showFileContextMenu(e, item);
+        row.onkeydown = (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            row.click();
+          }
         };
 
         ul.appendChild(row);
@@ -1664,6 +1838,134 @@
       }
     });
     container.appendChild(ul);
+  }
+
+  function saveFavoriteFileIds() {
+    try {
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favoriteFileIds]));
+    } catch (err) {
+      debug('Could not save favorite files', err);
+      showToast('Could not save favorites in this browser', 'error');
+    }
+  }
+
+  function getViewMode() {
+    try {
+      return localStorage.getItem(VIEW_MODE_KEY) === 'grid' ? 'grid' : 'list';
+    } catch (err) {
+      debug('Could not load file view mode', err);
+      return 'list';
+    }
+  }
+
+  function applyViewMode() {
+    const isGrid = getViewMode() === 'grid';
+    treeContainer.classList.toggle('grid-view', isGrid);
+    searchResults.classList.toggle('grid-view', isGrid);
+  }
+
+  function fileMatchesFilter(file) {
+    const mime = String(file.mimeType || '').toLowerCase();
+    const name = String(file.name || '').toLowerCase();
+    switch (currentFilter) {
+      case 'image': return mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i.test(name);
+      case 'video': return mime.startsWith('video/') || /\.(mp4|webm|mov|m4v|ogv)$/i.test(name);
+      case 'audio': return mime.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(name);
+      case 'application/pdf': return mime === 'application/pdf' || name.endsWith('.pdf');
+      case 'document':
+        return !fileMatchesMediaType(mime, name) && mime !== 'application/pdf' && !name.endsWith('.pdf');
+      default: return true;
+    }
+  }
+
+  function fileMatchesMediaType(mime, name) {
+    return mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/') ||
+      /\.(png|jpe?g|gif|webp|bmp|svg|avif|mp4|webm|mov|m4v|ogv|mp3|wav|ogg|m4a|aac|flac)$/i.test(name);
+  }
+
+  function renderCurrentFileList() {
+    const query = String(searchBar.value || '').trim().toLowerCase();
+    const filtered = Boolean(query || currentFilter !== 'all' || favoritesOnly);
+    treeContainer.style.display = filtered ? 'none' : '';
+    searchResults.style.display = filtered ? '' : 'none';
+    searchResults.replaceChildren();
+    if (!filtered) return;
+
+    const matches = allFlatFiles.filter(file => {
+      const name = String(file.name || '').toLowerCase();
+      return (!query || name.includes(query)) &&
+        fileMatchesFilter(file) &&
+        (!favoritesOnly || favoriteFileIds.has(String(file.id)));
+    });
+
+    if (!matches.length) {
+      const empty = document.createElement('div');
+      empty.className = 'item-row';
+      empty.textContent = 'No matching files';
+      empty.style.cursor = 'default';
+      searchResults.appendChild(empty);
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    matches.forEach(file => {
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.dataset.fileId = String(file.id);
+      row.tabIndex = 0;
+      row.setAttribute('role', 'button');
+      row.setAttribute('aria-label', `Open ${String(file.name || 'Unnamed file')}`);
+      if (favoriteFileIds.has(String(file.id))) row.classList.add('favorite');
+      const icon = document.createElement('span');
+      icon.className = 'icon';
+      icon.textContent = getIcon(file.mimeType, file.isDbPad);
+      const label = document.createElement('span');
+      label.className = 'item-label';
+      label.textContent = String(file.name || 'Unnamed file');
+      row.append(icon, label);
+      row.onclick = () => loadFile(file.id, row, file);
+      row.oncontextmenu = e => showFileContextMenu(e, file);
+      row.onkeydown = e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          row.click();
+        }
+      };
+      fragment.appendChild(row);
+    });
+    searchResults.appendChild(fragment);
+  }
+
+  function toggleFavorite(file) {
+    const id = String(file.id);
+    if (favoriteFileIds.has(id)) favoriteFileIds.delete(id);
+    else favoriteFileIds.add(id);
+    saveFavoriteFileIds();
+    renderTreeData(fullTreeData);
+  }
+
+  function showFileContextMenu(event, file) {
+    event.preventDefault();
+    contextMenu.replaceChildren();
+    const actions = [
+      ['Open', () => loadFile(file.id, null, file)],
+      [favoriteFileIds.has(String(file.id)) ? 'Remove favorite' : 'Add to favorites', () => toggleFavorite(file)],
+      ['Download', () => downloadFile(file)]
+    ];
+    actions.forEach(([label, action]) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'context-action';
+      button.textContent = label;
+      button.onclick = () => {
+        contextMenu.classList.remove('open');
+        action();
+      };
+      contextMenu.appendChild(button);
+    });
+    contextMenu.style.left = `${Math.max(8, Math.min(event.clientX, window.innerWidth - 190))}px`;
+    contextMenu.style.top = `${Math.max(8, Math.min(event.clientY, window.innerHeight - 120))}px`;
+    contextMenu.classList.add('open');
   }
 
   function loadDatabasePadPreview(doc) {
@@ -1706,6 +2008,7 @@
 
   function closeAdminDashModal() {
     currentAdminPass = '';
+    if (adminInactivityTimer) clearTimeout(adminInactivityTimer);
     if (adminDashModal) adminDashModal.classList.remove('active');
   }
 
@@ -1752,15 +2055,342 @@
       }
     };
   }
+  if (adminPassInput) {
+    adminPassInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') confirmAdminLoginBtn.click();
+    });
+  }
 
   async function postCommand(action, payload) {
     const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action, ...payload }) });
-    const result = await response.json();
+    let result;
+    try {
+      result = await response.json();
+    } catch (err) {
+      throw new Error(`${action} returned an invalid response`);
+    }
     if (!response.ok || !result || result.status !== 'success') {
       throw new Error(result && result.message ? result.message : `${action} failed`);
     }
     return result;
   }
+
+  const uploadFileInput = document.getElementById('file-input');
+  const uploadFolderInput = document.getElementById('folder-input');
+  const uploadDropzone = document.getElementById('upload-dropzone');
+  const uploadProgressList = document.getElementById('upload-progress-list');
+  const uploadQueueContainer = document.getElementById('pre-upload-queue-container');
+  const uploadQueueSection = document.getElementById('upload-queue-section');
+  const uploadStartButton = document.getElementById('start-queue-upload-btn');
+  const uploadFolderList = document.getElementById('modal-folder-list');
+  const uploadBreadcrumb = document.getElementById('modal-breadcrumb');
+
+  function openUploadModal() {
+    uploadDestinationId = ROOT_FOLDER_ID;
+    renderUploadFolders();
+    uploadModal.classList.add('active');
+  }
+
+  function closeUploadModal() {
+    uploadModal.classList.remove('active');
+  }
+
+  function collectUploadFolders(items, path = '', result = []) {
+    (Array.isArray(items) ? items : []).forEach(item => {
+      if (!item || item.type !== 'folder' || item.isDbFolder || !item.id) return;
+      const name = String(item.name || 'Unnamed folder');
+      const nextPath = path ? `${path} / ${name}` : name;
+      result.push({ id: String(item.id), name, path: nextPath });
+      collectUploadFolders(item.children, nextPath, result);
+    });
+    return result;
+  }
+
+  function renderUploadFolders() {
+    uploadFolderList.replaceChildren();
+    uploadBreadcrumb.textContent = 'Home';
+    const folders = [{ id: ROOT_FOLDER_ID, name: 'Home', path: 'Home' }, ...collectUploadFolders(fullTreeData)];
+    folders.forEach(folder => {
+      const option = document.createElement('div');
+      option.className = `modal-folder${folder.id === uploadDestinationId ? ' selected' : ''}`;
+      option.textContent = folder.path;
+      option.title = `Upload to ${folder.path}`;
+      option.tabIndex = 0;
+      option.setAttribute('role', 'button');
+      option.setAttribute('aria-pressed', String(folder.id === uploadDestinationId));
+      option.onclick = () => {
+        uploadDestinationId = folder.id;
+        uploadBreadcrumb.textContent = folder.path;
+        renderUploadFolders();
+      };
+      option.onkeydown = e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          option.click();
+        }
+      };
+      uploadFolderList.appendChild(option);
+    });
+    const selected = folders.find(folder => folder.id === uploadDestinationId);
+    if (selected) uploadBreadcrumb.textContent = selected.path;
+  }
+
+  function renderUploadQueue() {
+    uploadQueueContainer.replaceChildren();
+    uploadQueueSection.style.display = uploadQueue.length ? 'block' : 'none';
+    uploadStartButton.style.display = uploadQueue.length ? 'inline-flex' : 'none';
+    document.getElementById('queue-count-badge').textContent = `Queued Files (${uploadQueue.length})`;
+    uploadQueue.forEach((file, index) => {
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.style.cssText = 'display:flex; align-items:center; gap:8px; padding:6px 8px;';
+      const label = document.createElement('span');
+      label.className = 'item-label';
+      label.style.flex = '1';
+      label.textContent = `${file.webkitRelativePath || file.name} (${formatFileSize(file.size)})`;
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'neu-btn';
+      remove.textContent = '×';
+      remove.title = 'Remove from upload queue';
+      remove.setAttribute('aria-label', `Remove ${file.name} from upload queue`);
+      remove.onclick = () => {
+        uploadQueue.splice(index, 1);
+        renderUploadQueue();
+      };
+      row.append(label, remove);
+      uploadQueueContainer.appendChild(row);
+    });
+  }
+
+  function formatFileSize(size) {
+    if (!Number.isFinite(size) || size < 0) return 'unknown size';
+    if (size < 1024) return `${size} B`;
+    const units = ['KB', 'MB', 'GB', 'TB'];
+    let value = size / 1024;
+    let unit = 0;
+    while (value >= 1024 && unit < units.length - 1) {
+      value /= 1024;
+      unit++;
+    }
+    return `${value.toFixed(value >= 10 ? 0 : 1)} ${units[unit]}`;
+  }
+
+  function addFilesToUploadQueue(files) {
+    const queued = new Set(uploadQueue.map(file => `${file.webkitRelativePath || ''}/${file.name}/${file.size}`));
+    Array.from(files || []).forEach(file => {
+      if (!file || !file.name) return;
+      const key = `${file.webkitRelativePath || ''}/${file.name}/${file.size}`;
+      if (!queued.has(key)) {
+        uploadQueue.push(file);
+        queued.add(key);
+      }
+    });
+    renderUploadQueue();
+  }
+
+  function readBlobAsBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const bytes = new Uint8Array(reader.result);
+        let binary = '';
+        for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+          binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+        }
+        resolve(btoa(binary));
+      };
+      reader.onerror = () => reject(new Error('The selected file could not be read'));
+      reader.readAsArrayBuffer(blob);
+    });
+  }
+
+  async function createUploadSubfolders(file, cache) {
+    const parts = String(file.webkitRelativePath || '').split('/').slice(0, -1).filter(Boolean);
+    let parentId = uploadDestinationId;
+    for (const part of parts) {
+      const key = `${parentId}/${part}`;
+      if (cache.has(key)) {
+        parentId = cache.get(key);
+        continue;
+      }
+      const findChildren = (items, wantedId) => {
+        if (String(wantedId) === String(ROOT_FOLDER_ID)) return items;
+        for (const item of Array.isArray(items) ? items : []) {
+          if (item.type !== 'folder') continue;
+          if (String(item.id) === String(wantedId)) return Array.isArray(item.children) ? item.children : [];
+          const found = findChildren(item.children, wantedId);
+          if (found) return found;
+        }
+        return null;
+      };
+      const children = findChildren(fullTreeData, parentId);
+      const existing = (children || []).find(item => item.type === 'folder' && item.name === part);
+      if (existing) {
+        parentId = String(existing.id);
+      } else {
+        const currentParentId = parentId;
+        const result = await postCommand('createFolder', { parentId, name: part, folderName: part });
+        if (result.folderId) {
+          parentId = String(result.folderId);
+        } else {
+          await strictRefresh();
+          const refreshedChildren = findChildren(fullTreeData, currentParentId);
+          const created = (refreshedChildren || []).find(item => item.type === 'folder' && item.name === part);
+          if (!created || !created.id) throw new Error(`Could not find the created folder "${part}"`);
+          parentId = String(created.id);
+        }
+      }
+      cache.set(key, parentId);
+    }
+    return parentId;
+  }
+
+  async function uploadOneFile(file, parentId, progressBar) {
+    const common = {
+      parentId,
+      filename: String(file.name || 'unnamed-file'),
+      mimeType: file.type || 'application/octet-stream'
+    };
+    const directLimit = 35 * 1024 * 1024;
+    if (file.size <= directLimit) {
+      await postCommand('upload', { ...common, base64: await readBlobAsBase64(file) });
+      progressBar.style.width = '100%';
+      return;
+    }
+
+    const started = await postCommand('uploadStart', { ...common, total: file.size });
+    if (!started.sessionUrl) throw new Error('The upload service did not start a resumable upload');
+    const chunkSize = 24 * 1024 * 1024;
+    for (let offset = 0; offset < file.size; offset += chunkSize) {
+      const end = Math.min(offset + chunkSize, file.size);
+      await postCommand('uploadChunk', {
+        sessionUrl: started.sessionUrl,
+        start: offset,
+        end: end - 1,
+        total: file.size,
+        base64: await readBlobAsBase64(file.slice(offset, end))
+      });
+      progressBar.style.width = `${Math.round(end / file.size * 100)}%`;
+    }
+  }
+
+  async function startQueuedUploads() {
+    if (!uploadQueue.length || inFlightActions.has('upload')) return;
+    inFlightActions.add('upload');
+    const pending = [...uploadQueue];
+    const failed = [];
+    uploadProgressList.replaceChildren();
+    closeUploadModal();
+    document.getElementById('loading-overlay').classList.add('active');
+    uploadStartButton.disabled = true;
+    const folderCache = new Map();
+    try {
+      for (const file of pending) {
+        const item = document.createElement('div');
+        item.className = 'upload-progress-item';
+        item.textContent = file.webkitRelativePath || file.name;
+        const track = document.createElement('div');
+        track.className = 'progress-track';
+        const bar = document.createElement('div');
+        bar.className = 'progress-bar';
+        track.appendChild(bar);
+        item.appendChild(track);
+        uploadProgressList.appendChild(item);
+        try {
+          const parentId = await createUploadSubfolders(file, folderCache);
+          await uploadOneFile(file, parentId, bar);
+        } catch (err) {
+          failed.push(file);
+          item.classList.add('error');
+          item.appendChild(document.createTextNode(` — ${err.message}`));
+          debug(`Upload failed for ${file.name}`, err);
+        }
+      }
+      uploadQueue = failed;
+      renderUploadQueue();
+      if (failed.length !== pending.length) await strictRefresh();
+      showToast(
+        `${pending.length - failed.length} of ${pending.length} file(s) uploaded`,
+        failed.length ? 'error' : 'success'
+      );
+      if (failed.length) uploadModal.classList.add('active');
+    } finally {
+      document.getElementById('loading-overlay').classList.remove('active');
+      uploadStartButton.disabled = false;
+      uploadFileInput.value = '';
+      uploadFolderInput.value = '';
+      inFlightActions.delete('upload');
+    }
+  }
+
+  document.getElementById('upload-btn').onclick = openUploadModal;
+  document.getElementById('cancel-upload-btn').onclick = closeUploadModal;
+  uploadModal.addEventListener('click', e => {
+    if (e.target === uploadModal) closeUploadModal();
+  });
+  document.getElementById('confirm-upload-btn').onclick = () => uploadFileInput.click();
+  document.getElementById('choose-folder-btn').onclick = () => uploadFolderInput.click();
+  uploadFileInput.addEventListener('change', e => {
+    addFilesToUploadQueue(e.target.files);
+    uploadFileInput.value = '';
+  });
+  uploadFolderInput.addEventListener('change', e => {
+    addFilesToUploadQueue(e.target.files);
+    uploadFolderInput.value = '';
+  });
+  uploadStartButton.onclick = startQueuedUploads;
+  document.getElementById('clear-queue-btn').onclick = () => {
+    uploadQueue = [];
+    renderUploadQueue();
+  };
+  document.getElementById('create-folder-btn').onclick = async () => {
+    const input = document.getElementById('new-folder-name');
+    const name = input.value.trim();
+    if (!name) {
+      showToast('Enter a folder name first', 'error');
+      input.focus();
+      return;
+    }
+    try {
+      const result = await postCommand('createFolder', {
+        parentId: uploadDestinationId,
+        name,
+        folderName: name
+      });
+      input.value = '';
+      await strictRefresh();
+      if (result.folderId) uploadDestinationId = String(result.folderId);
+      renderUploadFolders();
+      showToast(`Folder "${name}" created`, 'success');
+    } catch (err) {
+      debug('Create folder failed', err);
+      showToast(`Folder creation failed: ${err.message}`, 'error');
+    }
+  };
+  document.getElementById('new-folder-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('create-folder-btn').click();
+  });
+  uploadDropzone.addEventListener('click', () => uploadFileInput.click());
+  uploadDropzone.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      uploadFileInput.click();
+    }
+  });
+  ['dragenter', 'dragover'].forEach(type => uploadDropzone.addEventListener(type, e => {
+    e.preventDefault();
+    uploadDropzone.classList.add('dragover');
+  }));
+  ['dragleave', 'drop'].forEach(type => uploadDropzone.addEventListener(type, e => {
+    e.preventDefault();
+    uploadDropzone.classList.remove('dragover');
+  }));
+  uploadDropzone.addEventListener('drop', e => addFilesToUploadQueue(e.dataTransfer.files));
+  document.addEventListener('paste', e => {
+    if (!uploadModal.classList.contains('active') || !e.clipboardData.files.length) return;
+    addFilesToUploadQueue(e.clipboardData.files);
+  });
 
   async function loadAdminPadsTable() {
     if (!currentAdminPass || !adminPadsTableContainer) return;
@@ -1826,11 +2456,34 @@
 
   function renderAdminFilesTable() {
     if (!adminFilesTableContainer) return;
-    adminFilesTableContainer.innerHTML = '';
-    allFlatFiles.forEach(file => {
+    const search = document.getElementById('admin-file-search');
+    const query = String(search && search.value || '').trim().toLowerCase();
+    const files = allFlatFiles.filter(file => !query || String(file.name || '').toLowerCase().includes(query));
+    const count = document.getElementById('admin-files-count');
+    if (count) count.textContent = query ? `Showing ${files.length} of ${allFlatFiles.length} files` : `${allFlatFiles.length} files`;
+    adminFilesTableContainer.replaceChildren();
+    if (!files.length) {
+      const empty = document.createElement('p');
+      empty.className = 'admin-files-empty';
+      empty.textContent = query ? 'No files match that search.' : 'No Drive files are available yet.';
+      adminFilesTableContainer.appendChild(empty);
+      return;
+    }
+    files.forEach(file => {
       const row = document.createElement('div');
       row.className = 'admin-file-row';
-      row.innerHTML = `<div><strong>${file.name}</strong></div><div><button class="neu-btn" onclick="window.open('${getViewerSource(file.id, file)}', '_blank')">Open</button></div>`;
+      const name = document.createElement('strong');
+      name.className = 'admin-file-name';
+      name.textContent = String(file.name || 'Unnamed file');
+      const actions = document.createElement('div');
+      actions.className = 'admin-file-actions';
+      const open = document.createElement('button');
+      open.type = 'button';
+      open.className = 'neu-btn';
+      open.textContent = 'Open';
+      open.onclick = () => window.open(getViewerSource(file.id, file), '_blank', 'noopener');
+      actions.appendChild(open);
+      row.append(name, actions);
       adminFilesTableContainer.appendChild(row);
     });
   }
@@ -1859,6 +2512,10 @@
   }
 
   function debug(msg, err) {
+    if (debugPanel) {
+      const detail = err && (err.stack || err.message || String(err));
+      debugPanel.textContent = `${new Date().toLocaleTimeString()} ${msg}${detail ? `\n${detail}` : ''}\n${debugPanel.textContent}`.slice(0, 6000);
+    }
     console.error(msg, err || '');
   }
 
@@ -1874,7 +2531,14 @@
     const isEditing = ['INPUT', 'TEXTAREA'].includes(activeTag);
 
     if (e.key === 'Escape') {
+      if (adminDashModal.classList.contains('active')) closeAdminDashModal();
       document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+      contextMenu.classList.remove('open');
+      sidebar.classList.remove('open');
+      overlay.classList.remove('active');
+      const sidebarToggle = document.getElementById('sidebar-toggle-btn');
+      sidebarToggle.setAttribute('aria-pressed', 'false');
+      sidebarToggle.title = 'Open file list';
     }
 
     if (!isEditing && (e.key === '?' || e.key === 'F1')) {
@@ -1882,32 +2546,175 @@
       shortcutsModal.classList.toggle('active');
     }
 
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      openAdminLoginModal();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'd') {
+      e.preventDefault();
+      debugPanel.classList.toggle('open');
+    }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
+      if (!sidebar.classList.contains('open')) {
+        sidebar.classList.add('open');
+        overlay.classList.add('active');
+        document.getElementById('sidebar-toggle-btn').setAttribute('aria-pressed', 'true');
+      }
       searchBar.focus();
     }
 
     if (!isEditing && e.key.toLowerCase() === 'f') {
+      e.preventDefault();
       document.getElementById('fullscreen-btn').click();
     }
   });
 
-  document.getElementById('fullscreen-btn').onclick = () => {
-    if (!document.fullscreenElement) main.requestFullscreen();
-    else document.exitFullscreen();
+  document.getElementById('fullscreen-btn').onclick = async () => {
+    try {
+      if (!document.fullscreenElement) await main.requestFullscreen();
+      else await document.exitFullscreen();
+    } catch (err) {
+      debug('Could not toggle fullscreen', err);
+      showToast(`Fullscreen is unavailable: ${err.message}`, 'error');
+    }
   };
 
+  const zoomDisplay = document.getElementById('zoom-display');
+  function applyZoom() {
+    iframeWrapper.style.transform = `scale(${currentZoom / 100})`;
+    zoomDisplay.textContent = `${currentZoom}%`;
+    document.getElementById('zoom-out').disabled = currentZoom <= 50;
+    document.getElementById('zoom-in').disabled = currentZoom >= 200;
+  }
+  document.getElementById('zoom-in').onclick = () => {
+    currentZoom = Math.min(200, currentZoom + 10);
+    applyZoom();
+  };
+  document.getElementById('zoom-out').onclick = () => {
+    currentZoom = Math.max(50, currentZoom - 10);
+    applyZoom();
+  };
+
+  document.getElementById('download-btn').onclick = () => {
+    if (!activeFile) {
+      showToast('Select a file before downloading', 'error');
+      return;
+    }
+    downloadFile(activeFile);
+  };
+
+  document.getElementById('theme-toggle-btn').onclick = () => {
+    const isWhite = !document.body.classList.contains('white-theme');
+    document.body.classList.toggle('white-theme', isWhite);
+    const themeButton = document.getElementById('theme-toggle-btn');
+    themeButton.setAttribute('aria-pressed', String(isWhite));
+    themeButton.setAttribute('aria-label', isWhite ? 'Switch to dark theme' : 'Switch to white theme');
+    themeButton.title = isWhite ? 'Switch to dark theme' : 'Switch to white theme';
+    try {
+      localStorage.setItem('drive_theme_mode', isWhite ? 'white' : 'dark');
+    } catch (err) {
+      debug('Could not save theme preference', err);
+    }
+  };
+  try {
+    const isWhite = localStorage.getItem('drive_theme_mode') === 'white';
+    document.body.classList.toggle('white-theme', isWhite);
+    const themeButton = document.getElementById('theme-toggle-btn');
+    themeButton.setAttribute('aria-pressed', String(isWhite));
+    themeButton.setAttribute('aria-label', isWhite ? 'Switch to dark theme' : 'Switch to white theme');
+    themeButton.title = isWhite ? 'Switch to dark theme' : 'Switch to white theme';
+  } catch (err) {
+    debug('Could not load theme preference', err);
+  }
+
+  document.getElementById('file-filter').onchange = e => {
+    currentFilter = e.target.value;
+    renderCurrentFileList();
+  };
+  searchBar.addEventListener('input', renderCurrentFileList);
+  document.getElementById('favorites-filter').onclick = e => {
+    favoritesOnly = !favoritesOnly;
+    e.currentTarget.classList.toggle('active', favoritesOnly);
+    e.currentTarget.setAttribute('aria-pressed', String(favoritesOnly));
+    renderCurrentFileList();
+  };
+  document.getElementById('view-mode-toggle').onclick = e => {
+    const nextMode = getViewMode() === 'grid' ? 'list' : 'grid';
+    try {
+      localStorage.setItem(VIEW_MODE_KEY, nextMode);
+    } catch (err) {
+      debug('Could not save file view mode', err);
+    }
+    e.currentTarget.textContent = nextMode === 'grid' ? 'List' : 'Grid';
+    e.currentTarget.title = nextMode === 'grid' ? 'Switch to list view' : 'Switch to grid view';
+    e.currentTarget.setAttribute('aria-pressed', String(nextMode === 'grid'));
+    applyViewMode();
+  };
+  const savedViewMode = getViewMode();
+  document.getElementById('view-mode-toggle').textContent = savedViewMode === 'grid' ? 'List' : 'Grid';
+  document.getElementById('view-mode-toggle').title = savedViewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view';
+  document.getElementById('view-mode-toggle').setAttribute('aria-pressed', String(savedViewMode === 'grid'));
+  document.getElementById('favorites-filter').setAttribute('aria-pressed', 'false');
+
+  document.getElementById('admin-add-pad-btn').onclick = async () => {
+    if (!currentAdminPass) return;
+    const title = prompt('New Pad Title:', 'Editable Pad');
+    if (!title || !title.trim()) return;
+    const content = prompt('Initial Text Content:', 'Welcome to new pad!');
+    if (content === null) return;
+    const pin = prompt('Optional Lock PIN (leave empty for unlocked):', '');
+    if (pin === null) return;
+    try {
+      await postCommand('adminAddPad', {
+        adminKey: currentAdminPass,
+        title: title.trim(),
+        content,
+        pin
+      });
+      showToast(`Created "${title.trim()}"`, 'success');
+      await loadAdminPadsTable();
+      await strictRefresh();
+    } catch (err) {
+      showToast(`Creation failed: ${err.message}`, 'error');
+    }
+  };
+  document.getElementById('admin-purge-cache-btn').onclick = async () => {
+    if (!currentAdminPass) return;
+    if (!confirm('Purge the server cache and rebuild the workspace tree?')) return;
+    try {
+      await postCommand('adminPurgeCache', { adminKey: currentAdminPass });
+      showToast('Server cache purged', 'success');
+      await strictRefresh();
+    } catch (err) {
+      showToast(`Purge failed: ${err.message}`, 'error');
+    }
+  };
+  document.getElementById('admin-file-search').addEventListener('input', renderAdminFilesTable);
+  document.getElementById('initial-load-retry').onclick = strictRefresh;
   document.getElementById('refresh-btn').onclick = strictRefresh;
   document.getElementById('sidebar-toggle-btn').onclick = () => {
-    sidebar.classList.toggle('open');
-    overlay.classList.toggle('active');
+    const isOpen = !sidebar.classList.contains('open');
+    sidebar.classList.toggle('open', isOpen);
+    overlay.classList.toggle('active', isOpen);
+    const toggle = document.getElementById('sidebar-toggle-btn');
+    toggle.setAttribute('aria-pressed', String(isOpen));
+    toggle.title = isOpen ? 'Close file list' : 'Open file list';
   };
   overlay.onclick = () => {
     sidebar.classList.remove('open');
     overlay.classList.remove('active');
+    const toggle = document.getElementById('sidebar-toggle-btn');
+    toggle.setAttribute('aria-pressed', 'false');
+    toggle.title = 'Open file list';
   };
+  document.addEventListener('click', e => {
+    if (!contextMenu.contains(e.target)) contextMenu.classList.remove('open');
+  });
 
   /* INITIALIZATION */
+  renderTabBar();
+  applyZoom();
   strictRefresh();
 </script>
 </body>
