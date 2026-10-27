@@ -268,10 +268,94 @@
     }
 
     .search-container {
-      padding: 18px;
+      padding: 14px;
       border-bottom: 1px solid var(--glass-border);
       position: relative;
     }
+
+    .sidebar-search-label {
+      display: block;
+      margin: 0 0 8px 2px;
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 650;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 0 9px 0 12px;
+      border: 1px solid var(--glass-border);
+      border-radius: 13px;
+      background: rgba(0,0,0,.24);
+      transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+
+    .sidebar-search-box:focus-within {
+      border-color: rgba(96,165,250,.72);
+      background: rgba(0,0,0,.34);
+      box-shadow: 0 0 0 3px rgba(96,165,250,.12);
+    }
+
+    .sidebar-search-icon {
+      width: 17px;
+      height: 17px;
+      flex: 0 0 17px;
+      color: var(--text-muted);
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+    }
+
+    #search-bar {
+      width: 100%;
+      min-width: 0;
+      height: 40px;
+      padding: 0;
+      border: 0;
+      outline: 0;
+      color: var(--text-main);
+      background: transparent;
+      font: inherit;
+      font-size: 12px;
+    }
+
+    #search-bar::placeholder { color: var(--text-muted); opacity: .8; }
+    #search-bar::-webkit-search-cancel-button { display: none; }
+
+    #clear-search-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      min-width: 26px;
+      height: 26px;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      color: var(--text-muted);
+      background: transparent;
+      box-shadow: none;
+      font-size: 16px;
+    }
+
+    #clear-search-btn[hidden] { display: none; }
+    #clear-search-btn:hover { color: var(--text-main); background: var(--btn-bg); }
+
+    .sidebar-search-hint {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 7px 2px 0;
+      color: var(--text-muted);
+      font-size: 10px;
+    }
+
+    #search-result-count { white-space: nowrap; }
 
     .workspace-tools {
       display: flex;
@@ -390,6 +474,14 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
+    .search-result-row { align-items: flex-start; }
+    .search-result-row > .icon { margin-top: 1px; }
+    .search-result-meta { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+    .search-result-name { overflow: hidden; text-overflow: ellipsis; }
+    .search-result-path { margin-top: 3px; color: var(--text-muted); font-size: 10px; white-space: normal; overflow-wrap: anywhere; }
+    .grid-view .search-result-row { align-items: center; }
+    .grid-view .search-result-path { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 
     .grid-view .item-row.favorite::after {
       margin: 6px 0 0;
@@ -786,6 +878,21 @@
     .admin-files-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 4px 0 12px; }
     .admin-files-search { flex: 1 1 260px; max-width: 440px; min-height: 40px; padding: 9px 12px; border: 1px solid rgba(255,255,255,.2); border-radius: 10px; background: #111; color: #fff; font: inherit; }
     .admin-files-count { color: #d4d4dc; font-size: 12px; }
+    .admin-file-controls { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin: 8px 0; }
+    .admin-file-controls select,
+    .admin-file-controls button { min-width: 0; height: 32px; padding: 0 9px; border: 1px solid rgba(255,255,255,.16); border-radius: 9px; background: #19191f; color: #f5f5f7; font: inherit; font-size: 11px; }
+    .admin-file-controls select { max-width: 210px; }
+    .admin-file-controls button { cursor: pointer; }
+    .admin-file-controls button:hover { background: #292932; }
+    .admin-file-controls button:disabled { cursor: not-allowed; opacity: .45; }
+    .admin-file-controls .admin-danger-action { color: #fecaca; border-color: rgba(248,113,113,.35); }
+    .admin-file-select { width: 18px; height: 18px; accent-color: #fff; cursor: pointer; }
+    .admin-file-details { grid-column: 1 / -1; padding: 9px 10px; border-radius: 9px; background: rgba(0,0,0,.24); color: #d4d4dc; font-size: 11px; overflow-wrap: anywhere; }
+    .admin-file-details summary { cursor: pointer; color: #e5e7eb; }
+    .admin-file-details dl { display: grid; grid-template-columns: minmax(90px, auto) minmax(0, 1fr); gap: 5px 10px; margin-top: 8px; }
+    .admin-file-details dt { color: #9ca3af; }
+    .admin-file-details dd { margin: 0; }
+    .tab-open-new { margin-left: auto; height: 28px; min-width: 0; padding: 0 10px; border-radius: 8px; font-size: 11px; }
 
     #admin-files-table-container {
       display: flex;
@@ -1110,6 +1217,34 @@
         </div>
         <input type="search" id="admin-file-search" class="admin-files-search" aria-label="Search Drive file names and folder paths" placeholder="Search by name or folder path…">
       </div>
+      <div class="admin-file-controls" aria-label="Admin file actions">
+        <select id="admin-file-type-filter" aria-label="Filter by item type">
+          <option value="all">All items</option>
+          <option value="file">Files</option>
+          <option value="folder">Folders</option>
+          <option value="image">Images</option>
+          <option value="video">Videos</option>
+          <option value="audio">Audio</option>
+          <option value="application/pdf">PDFs</option>
+        </select>
+        <select id="admin-file-sort" aria-label="Sort items">
+          <option value="name">Sort: Name</option>
+          <option value="type">Sort: Type</option>
+          <option value="size">Sort: Size</option>
+          <option value="modified">Sort: Modified</option>
+        </select>
+        <select id="admin-target-folder" aria-label="Target folder for create and move"></select>
+        <button id="admin-create-folder-btn" type="button" class="neu-btn">+ Folder</button>
+        <button id="admin-upload-files-btn" type="button" class="neu-btn">Upload</button>
+        <button id="admin-select-visible-btn" type="button" class="neu-btn">Select visible</button>
+        <button id="admin-move-selected-btn" type="button" class="neu-btn" disabled>Move selected</button>
+        <button id="admin-download-selected-btn" type="button" class="neu-btn" disabled>Download selected</button>
+        <button id="admin-trash-selected-btn" type="button" class="neu-btn admin-danger-action" disabled>Move to trash</button>
+        <button id="admin-restore-selected-btn" type="button" class="neu-btn" disabled hidden>Restore selected</button>
+        <button id="admin-permanent-delete-selected-btn" type="button" class="neu-btn admin-danger-action" disabled hidden>Delete selected forever</button>
+        <button id="admin-clear-selection-btn" type="button" class="neu-btn" disabled>Clear selection</button>
+        <button id="admin-trash-view-btn" type="button" class="neu-btn" aria-pressed="false">View trash</button>
+      </div>
       <div id="admin-files-table-container" aria-label="Drive files and folders"></div>
     </div>
 
@@ -1144,7 +1279,16 @@
 
 <nav id="sidebar" class="glass-panel">
   <div class="search-container">
-    <input type="search" id="search-bar" aria-label="Search files" placeholder="Search files...">
+    <label class="sidebar-search-label" for="search-bar">Search workspace</label>
+    <div class="sidebar-search-box">
+      <svg class="sidebar-search-icon" aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+      <input type="search" id="search-bar" aria-label="Search files and folder locations" placeholder="Search files or folders..." autocomplete="off">
+      <button id="clear-search-btn" type="button" aria-label="Clear search" title="Clear search" hidden>×</button>
+    </div>
+    <div class="sidebar-search-hint">
+      <span>Names and folder locations</span>
+      <span id="search-result-count" aria-live="polite"></span>
+    </div>
     <div class="workspace-tools" aria-label="File view controls">
       <select id="file-filter" aria-label="Filter files" title="Filter files">
         <option value="all">All files</option>
@@ -1229,6 +1373,7 @@
   let uploadDestinationId = ROOT_FOLDER_ID;
   const inFlightActions = new Set();
   const expandedFolderIds = new Set(['db_pads_folder']);
+  let returnToAdminAfterUpload = false;
 
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('overlay');
@@ -1238,6 +1383,8 @@
   const iframeWrapper = document.getElementById('iframe-wrapper');
   const placeholder = document.getElementById('placeholder');
   const searchBar = document.getElementById('search-bar');
+  const searchResultCount = document.getElementById('search-result-count');
+  const clearSearchButton = document.getElementById('clear-search-btn');
   const downloadBtn = document.getElementById('download-btn');
   const syncIndicator = document.getElementById('sync-indicator');
   const uploadModal = document.getElementById('upload-modal');
@@ -1314,6 +1461,73 @@
       tabEl.onclick = () => switchTab(tab.id);
       tabBar.appendChild(tabEl);
     });
+
+    const activeTab = openTabs.find(tab => String(tab.id) === String(activeTabId));
+    if (activeTab) {
+      const openNewTabButton = document.createElement('button');
+      openNewTabButton.type = 'button';
+      openNewTabButton.className = 'tab-open-new';
+      openNewTabButton.textContent = 'Open in new tab';
+      openNewTabButton.title = `Open ${activeTab.name || 'file'} in a new browser tab`;
+      openNewTabButton.onclick = openActiveFileInNewTab;
+      tabBar.appendChild(openNewTabButton);
+    }
+  }
+
+  async function openActiveFileInNewTab() {
+    const tab = openTabs.find(item => String(item.id) === String(activeTabId));
+    if (!tab) {
+      showToast('Open a file before opening a new tab', 'error');
+      return;
+    }
+
+    const newWindow = window.open('', '_blank');
+    if (!newWindow) {
+      showToast('Allow pop-ups to open this file in a new tab', 'error');
+      return;
+    }
+    newWindow.opener = null;
+
+    const name = String(tab.file.name || tab.name || 'file');
+    const isHtml = /\.html?$/i.test(name) || String(tab.mimeType || '').toLowerCase() === 'text/html';
+    if (isHtml || tab.isDbPad) {
+      try {
+        let content = tab.isDbPad
+          ? String(tab.docData && tab.docData.content || tab.file.content || '')
+          : String(tab.content || '');
+        if (tab.isDbPad && String(activeTabId) === String(tab.id) && fileViewer.contentDocument) {
+          const editor = fileViewer.contentDocument.getElementById('live-text');
+          if (editor) content = editor.value;
+        }
+        if (!tab.isDbPad && (!content || content === 'Loading file content from Drive...')) {
+          const response = await fetch(`${SCRIPT_URL}?mode=file&id=${encodeURIComponent(tab.id)}`);
+          if (!response.ok) throw new Error(`File request failed (${response.status})`);
+          content = await response.text();
+        }
+        newWindow.document.title = name;
+        newWindow.document.documentElement.style.height = '100%';
+        newWindow.document.body.style.cssText = 'height:100%;margin:0;';
+        if (tab.isDbPad) {
+          const preview = newWindow.document.createElement('pre');
+          preview.textContent = content;
+          preview.style.cssText = 'box-sizing:border-box;height:100%;margin:0;padding:24px;overflow:auto;background:#111;color:#eee;font:14px/1.6 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;';
+          newWindow.document.body.appendChild(preview);
+        } else {
+          const preview = newWindow.document.createElement('iframe');
+          preview.title = name;
+          preview.setAttribute('sandbox', 'allow-scripts');
+          preview.style.cssText = 'display:block;width:100%;height:100%;border:0;';
+          preview.srcdoc = content;
+          newWindow.document.body.appendChild(preview);
+        }
+      } catch (err) {
+        newWindow.close();
+        showToast(`Could not open file in a new tab: ${err.message}`, 'error');
+      }
+      return;
+    }
+
+    newWindow.location.replace(getViewerSource(tab.id, tab.file));
   }
 
   function switchTab(tabId) {
@@ -1786,7 +2000,7 @@
     applyViewMode();
   }
 
-  function buildTree(data, container) {
+  function buildTree(data, container, folderPath = '') {
     const ul = document.createElement('div');
     data.forEach(item => {
       if (!item || typeof item !== 'object') return;
@@ -1810,7 +2024,10 @@
 
         const children = document.createElement('div');
         children.className = `folder-group${isExpanded ? ' open' : ''}`;
-        buildTree(Array.isArray(item.children) ? item.children : [], children);
+        const currentFolderPath = folderPath
+          ? `${folderPath} / ${String(item.name || 'Unnamed folder')}`
+          : String(item.name || 'Unnamed folder');
+        buildTree(Array.isArray(item.children) ? item.children : [], children, currentFolderPath);
 
         row.onclick = (e) => {
           e.stopPropagation();
@@ -1857,7 +2074,7 @@
         };
 
         ul.appendChild(row);
-        allFlatFiles.push(item);
+        allFlatFiles.push({ ...item, folderPath: folderPath || 'My Drive' });
       }
     });
     container.appendChild(ul);
@@ -1909,17 +2126,23 @@
   function renderCurrentFileList() {
     const query = String(searchBar.value || '').trim().toLowerCase();
     const filtered = Boolean(query || currentFilter !== 'all' || favoritesOnly);
+    if (clearSearchButton) clearSearchButton.hidden = !searchBar.value;
     treeContainer.style.display = filtered ? 'none' : '';
     searchResults.style.display = filtered ? '' : 'none';
     searchResults.replaceChildren();
-    if (!filtered) return;
+    if (!filtered) {
+      if (searchResultCount) searchResultCount.textContent = `${allFlatFiles.length} files`;
+      return;
+    }
 
     const matches = allFlatFiles.filter(file => {
       const name = String(file.name || '').toLowerCase();
-      return (!query || name.includes(query)) &&
+      const path = String(file.folderPath || '').toLowerCase();
+      return (!query || name.includes(query) || path.includes(query)) &&
         fileMatchesFilter(file) &&
         (!favoritesOnly || favoriteFileIds.has(String(file.id)));
     });
+    if (searchResultCount) searchResultCount.textContent = `${matches.length} result${matches.length === 1 ? '' : 's'}`;
 
     if (!matches.length) {
       const empty = document.createElement('div');
@@ -1943,9 +2166,16 @@
       icon.className = 'icon';
       icon.textContent = getIcon(file.mimeType, file.isDbPad);
       const label = document.createElement('span');
-      label.className = 'item-label';
+      label.className = 'item-label search-result-name';
       label.textContent = String(file.name || 'Unnamed file');
-      row.append(icon, label);
+      const path = document.createElement('span');
+      path.className = 'search-result-path';
+      path.textContent = String(file.folderPath || 'My Drive');
+      const metadata = document.createElement('span');
+      metadata.className = 'search-result-meta';
+      metadata.append(label, path);
+      row.classList.add('search-result-row');
+      row.append(icon, metadata);
       row.onclick = () => loadFile(file.id, row, file);
       row.oncontextmenu = e => showFileContextMenu(e, file);
       row.onkeydown = e => {
@@ -2050,7 +2280,11 @@
     if (adminPanelSystem) adminPanelSystem.style.display = (tab === 'system' ? 'block' : 'none');
 
     if (tab === 'pads') loadAdminPadsTable();
-    if (tab === 'files') renderAdminFilesTable();
+    if (tab === 'files') {
+      renderAdminFolderOptions();
+      if (adminTrashMode) loadAdminTrash();
+      else renderAdminFilesTable();
+    }
   }
 
   if (adminTabPads) adminTabPads.onclick = () => switchAdminTab('pads');
@@ -2114,8 +2348,21 @@
     uploadModal.classList.add('active');
   }
 
-  function closeUploadModal() {
+  function openAdminUpload() {
+    if (!currentAdminPass) return;
+    returnToAdminAfterUpload = true;
+    adminDashModal.classList.remove('active');
+    openUploadModal();
+    uploadDestinationId = document.getElementById('admin-target-folder').value || ROOT_FOLDER_ID;
+    renderUploadFolders();
+  }
+
+  function closeUploadModal(keepAdminHidden = false) {
     uploadModal.classList.remove('active');
+    if (returnToAdminAfterUpload && !keepAdminHidden) {
+      returnToAdminAfterUpload = false;
+      adminDashModal.classList.add('active');
+    }
   }
 
   function collectUploadFolders(items, path = '', result = []) {
@@ -2304,7 +2551,7 @@
     const pending = [...uploadQueue];
     const failed = [];
     uploadProgressList.replaceChildren();
-    closeUploadModal();
+    closeUploadModal(true);
     document.getElementById('loading-overlay').classList.add('active');
     uploadStartButton.disabled = true;
     const folderCache = new Map();
@@ -2344,6 +2591,12 @@
       uploadFileInput.value = '';
       uploadFolderInput.value = '';
       inFlightActions.delete('upload');
+      if (returnToAdminAfterUpload && !failed.length) {
+        renderAdminFolderOptions();
+        renderAdminFilesTable();
+        returnToAdminAfterUpload = false;
+        adminDashModal.classList.add('active');
+      }
     }
   }
 
@@ -2482,60 +2735,208 @@
     } catch(err) { showToast(err.message, 'error'); }
   }
 
+  let selectedAdminItemIds = new Set();
+  let adminTrashMode = false;
+  let adminTrashItems = [];
+
+  function collectAdminDriveItems() {
+    const result = [];
+    const visit = (items, folderPath = '', parentId = ROOT_FOLDER_ID, ancestorIds = []) => {
+      (Array.isArray(items) ? items : []).forEach(item => {
+        if (!item || typeof item !== 'object' || item.isDbPad || item.isDbFolder) return;
+        if (item.type === 'folder') {
+          if (item.id == null) return;
+          const name = String(item.name || 'Unnamed folder');
+          const path = folderPath ? `${folderPath} / ${name}` : name;
+          result.push({ item, itemType: 'folder', path, parentId, ancestorIds });
+          visit(item.children, path, String(item.id), [...ancestorIds, String(item.id)]);
+        } else if (item.type === 'file' && item.id != null) {
+          result.push({ item, itemType: 'file', path: folderPath || 'My Drive', parentId, ancestorIds });
+        }
+      });
+    };
+    visit(fullTreeData);
+    return result;
+  }
+
+  function renderAdminFolderOptions() {
+    const select = document.getElementById('admin-target-folder');
+    if (!select) return;
+    const selected = select.value || ROOT_FOLDER_ID;
+    select.replaceChildren();
+    const addOption = (id, label) => {
+      const option = document.createElement('option');
+      option.value = String(id);
+      option.textContent = label;
+      select.appendChild(option);
+    };
+    addOption(ROOT_FOLDER_ID, 'Target: My Drive');
+    collectAdminDriveItems()
+      .filter(entry => entry.itemType === 'folder')
+      .forEach(entry => addOption(entry.item.id, entry.path));
+    if ([...select.options].some(option => option.value === selected)) select.value = selected;
+  }
+
+  function updateAdminSelectionControls(visibleEntries = []) {
+    const count = selectedAdminItemIds.size;
+    const selectedCount = document.getElementById('admin-files-count');
+    const move = document.getElementById('admin-move-selected-btn');
+    const download = document.getElementById('admin-download-selected-btn');
+    const trash = document.getElementById('admin-trash-selected-btn');
+    const clear = document.getElementById('admin-clear-selection-btn');
+    const restore = document.getElementById('admin-restore-selected-btn');
+    const permanentDelete = document.getElementById('admin-permanent-delete-selected-btn');
+    const selectVisible = document.getElementById('admin-select-visible-btn');
+    const targetFolder = document.getElementById('admin-target-folder');
+    const createFolder = document.getElementById('admin-create-folder-btn');
+    const uploadFiles = document.getElementById('admin-upload-files-btn');
+    if (move) move.disabled = !count || adminTrashMode;
+    if (download) download.disabled = !count || adminTrashMode;
+    if (trash) trash.disabled = !count || adminTrashMode;
+    if (restore) {
+      restore.hidden = !adminTrashMode;
+      restore.disabled = !count || !adminTrashMode;
+    }
+    if (permanentDelete) {
+      permanentDelete.hidden = !adminTrashMode;
+      permanentDelete.disabled = !count || !adminTrashMode;
+    }
+    if (clear) clear.disabled = !count;
+    if (targetFolder) targetFolder.disabled = adminTrashMode;
+    if (createFolder) createFolder.disabled = adminTrashMode;
+    if (uploadFiles) uploadFiles.disabled = adminTrashMode;
+    if (selectVisible) {
+      const allSelected = visibleEntries.length > 0 &&
+        visibleEntries.every(entry => selectedAdminItemIds.has(String(entry.item.id)));
+      selectVisible.textContent = allSelected ? 'Deselect visible' : 'Select visible';
+    }
+    if (selectedCount && count) {
+      const base = selectedCount.dataset.baseText || selectedCount.textContent;
+      selectedCount.dataset.baseText = base.replace(/ · \d+ selected$/, '');
+      selectedCount.textContent = `${selectedCount.dataset.baseText} · ${count} selected`;
+    }
+  }
+
+  async function loadAdminTrash() {
+    if (!currentAdminPass) return;
+    const container = adminFilesTableContainer;
+    container.replaceChildren();
+    const loading = document.createElement('p');
+    loading.className = 'admin-files-empty';
+    loading.textContent = 'Loading trash…';
+    container.appendChild(loading);
+    try {
+      const result = await postCommand('adminListTrash', { adminKey: currentAdminPass });
+      const items = result.items || result.files || result.trash;
+      if (!Array.isArray(items)) throw new Error('The server did not return a valid trash list');
+      adminTrashItems = items.filter(item => item && typeof item === 'object' && item.id != null);
+      renderAdminFilesTable();
+    } catch (err) {
+      container.replaceChildren();
+      const error = document.createElement('p');
+      error.className = 'admin-files-empty';
+      error.textContent = `Could not load trash: ${err.message}`;
+      container.appendChild(error);
+      showToast(`Could not load trash: ${err.message}`, 'error');
+    }
+  }
+
   function renderAdminFilesTable() {
     if (!adminFilesTableContainer) return;
     const search = document.getElementById('admin-file-search');
     const query = String(search && search.value || '').trim().toLowerCase();
-    const files = [];
-    const collectFiles = (items, folderPath = '') => {
-      (Array.isArray(items) ? items : []).forEach(item => {
-        if (!item || typeof item !== 'object') return;
-        if (item.type === 'folder') {
-          if (!item.isDbFolder) {
-            const name = String(item.name || 'Unnamed folder');
-            collectFiles(item.children, folderPath ? `${folderPath} / ${name}` : name);
-          }
-          return;
-        }
-        if (item.type === 'file' && !item.isDbPad) {
-          files.push({ file: item, path: folderPath || 'My Drive' });
-        }
-      });
-    };
-    collectFiles(fullTreeData);
-    const filteredFiles = files.filter(({ file, path }) =>
-      !query || `${String(file.name || '')} ${path}`.toLowerCase().includes(query)
-    );
+    const typeFilter = document.getElementById('admin-file-type-filter').value;
+    const sortMode = document.getElementById('admin-file-sort').value;
+    const entries = adminTrashMode
+      ? adminTrashItems.map(item => ({
+          item,
+          itemType: item.type === 'folder' ? 'folder' : 'file',
+          path: String(item.path || item.parentName || 'Trash'),
+          parentId: item.parentId || ROOT_FOLDER_ID,
+          trashed: true
+        }))
+      : collectAdminDriveItems();
+    const filtered = entries.filter(entry => {
+      const name = String(entry.item.name || 'Unnamed item').toLowerCase();
+      const mime = String(entry.item.mimeType || '').toLowerCase();
+      const searchMatch = !query || `${name} ${entry.path.toLowerCase()}`.includes(query);
+      let typeMatch = typeFilter === 'all' ||
+        (typeFilter === 'file' && entry.itemType === 'file') ||
+        (typeFilter === 'folder' && entry.itemType === 'folder');
+      if (['image', 'video', 'audio', 'application/pdf'].includes(typeFilter)) {
+        typeMatch = entry.itemType === 'file' && (
+          mime.startsWith(`${typeFilter}/`) ||
+          (typeFilter === 'application/pdf' && /\.pdf$/i.test(name))
+        );
+      }
+      return searchMatch && typeMatch;
+    });
+    const getModified = item => Date.parse(item.modifiedTime || item.modifiedDate || item.modified || item.lastUpdated || '') || 0;
+    filtered.sort((a, b) => {
+      if (sortMode === 'type') {
+        return a.itemType.localeCompare(b.itemType) || String(a.item.name || '').localeCompare(String(b.item.name || ''), undefined, { sensitivity: 'base' });
+      }
+      if (sortMode === 'size') return (Number(a.item.size) || 0) - (Number(b.item.size) || 0);
+      if (sortMode === 'modified') return getModified(b.item) - getModified(a.item);
+      return String(a.item.name || '').localeCompare(String(b.item.name || ''), undefined, { sensitivity: 'base' });
+    });
+
     const count = document.getElementById('admin-files-count');
-    if (count) count.textContent = query
-      ? `Showing ${filteredFiles.length} of ${files.length} Drive files`
-      : `${files.length} Drive files`;
+    if (count) {
+      count.dataset.baseText = adminTrashMode
+        ? `${filtered.length} of ${entries.length} trashed items`
+        : `${filtered.length} of ${entries.length} Drive items`;
+      count.textContent = count.dataset.baseText;
+    }
+    const trashButton = document.getElementById('admin-trash-view-btn');
+    if (trashButton) {
+      trashButton.textContent = adminTrashMode ? 'Back to Drive' : 'View trash';
+      trashButton.setAttribute('aria-pressed', String(adminTrashMode));
+    }
     adminFilesTableContainer.replaceChildren();
-    if (!filteredFiles.length) {
+    const availableIds = new Set(entries.map(entry => String(entry.item.id)));
+    selectedAdminItemIds = new Set([...selectedAdminItemIds].filter(id => availableIds.has(id)));
+    updateAdminSelectionControls(filtered);
+    if (!filtered.length) {
       const empty = document.createElement('p');
       empty.className = 'admin-files-empty';
-      empty.textContent = query ? 'No files match that search.' : 'No Drive files are available yet.';
+      empty.textContent = query ? 'No items match that search.' :
+        adminTrashMode ? 'Trash is empty.' : 'No Drive files or folders are available yet.';
       adminFilesTableContainer.appendChild(empty);
       return;
     }
-    filteredFiles.forEach(({ file, path }) => {
+
+    filtered.forEach(entry => {
+      const item = entry.item;
+      const id = String(item.id);
       const row = document.createElement('div');
       row.className = 'admin-file-row';
       const info = document.createElement('div');
       info.className = 'admin-file-info';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'admin-file-select';
+      checkbox.dataset.itemId = id;
+      checkbox.checked = selectedAdminItemIds.has(id);
+      checkbox.setAttribute('aria-label', `Select ${String(item.name || 'Unnamed item')}`);
+      checkbox.onchange = () => {
+        if (checkbox.checked) selectedAdminItemIds.add(id);
+        else selectedAdminItemIds.delete(id);
+        updateAdminSelectionControls(filtered);
+      };
       const icon = document.createElement('span');
       icon.className = 'admin-file-icon';
-      icon.textContent = getIcon(file.mimeType, false);
+      icon.textContent = entry.itemType === 'folder' ? '📁' : getIcon(item.mimeType, false);
       const metadata = document.createElement('div');
       metadata.style.minWidth = '0';
       const name = document.createElement('strong');
       name.className = 'admin-file-name';
-      name.textContent = String(file.name || 'Unnamed file');
+      name.textContent = String(item.name || 'Unnamed item');
       const location = document.createElement('span');
       location.className = 'admin-file-path';
-      location.textContent = path;
+      location.textContent = entry.path;
       metadata.append(name, location);
-      info.append(icon, metadata);
+      info.append(checkbox, icon, metadata);
       const actions = document.createElement('div');
       actions.className = 'admin-file-actions';
       const addAction = (label, action, className = '') => {
@@ -2545,55 +2946,316 @@
         button.textContent = label;
         button.onclick = action;
         actions.appendChild(button);
-        return button;
       };
-      addAction('Open', () => window.open(getViewerSource(file.id, file), '_blank', 'noopener'));
-      addAction('Download', () => downloadFile(file));
-      addAction('Rename', () => adminRenameDriveFile(file));
-      addAction('Delete', () => adminDeleteDriveFile(file), 'admin-file-delete');
-      row.append(info, actions);
+
+      if (adminTrashMode) {
+        addAction('Restore', () => restoreAdminItem(entry));
+        addAction('Delete forever', () => permanentlyDeleteAdminItem(entry), 'admin-file-delete');
+      } else if (entry.itemType === 'folder') {
+        addAction('Use as destination', () => {
+          document.getElementById('admin-target-folder').value = id;
+          showToast(`Target folder set to "${item.name}"`, 'success');
+        });
+        addAction('Rename', () => adminRenameDriveItem(entry));
+        addAction('Move to trash', () => trashAdminItem(entry), 'admin-file-delete');
+      } else {
+        addAction('Preview', () => loadFile(item.id, null, item));
+        addAction('Download', () => downloadFile(item));
+        addAction('Copy link', () => copyAdminItemLink(item, entry.itemType));
+        addAction('Rename', () => adminRenameDriveItem(entry));
+        addAction('Move to trash', () => trashAdminItem(entry), 'admin-file-delete');
+      }
+
+      const details = document.createElement('details');
+      details.className = 'admin-file-details';
+      const summary = document.createElement('summary');
+      summary.textContent = 'Details';
+      const list = document.createElement('dl');
+      const detailRows = new Map();
+      const addDetail = (label, value) => {
+        if (value == null || value === '') return;
+        if (detailRows.has(label)) {
+          detailRows.get(label).textContent = String(value);
+          return;
+        }
+        const term = document.createElement('dt');
+        term.textContent = label;
+        const definition = document.createElement('dd');
+        definition.textContent = String(value);
+        list.append(term, definition);
+        detailRows.set(label, definition);
+      };
+      addDetail('Type', entry.itemType === 'folder' ? 'Folder' : item.mimeType || 'File');
+      addDetail('Size', item.size != null ? formatFileSize(Number(item.size)) : null);
+      addDetail('Location', entry.path);
+      addDetail('Modified', item.modifiedTime || item.modifiedDate || item.modified || item.lastUpdated);
+      addDetail('Created', item.createdTime || item.createdDate || item.created);
+      addDetail('ID', item.id);
+      let detailsLoaded = false;
+      let detailsLoading = false;
+      details.addEventListener('toggle', async () => {
+        if (!details.open || detailsLoaded || detailsLoading) return;
+        detailsLoading = true;
+        try {
+          const response = await postCommand('adminGetFileDetails', {
+            adminKey: currentAdminPass,
+            itemId: id,
+            itemType: entry.itemType
+          });
+          const metadata = response.details;
+          if (!metadata) throw new Error('The server did not return file details');
+          addDetail('Type', metadata.type === 'folder' ? 'Folder' : metadata.mimeType || 'File');
+          if (metadata.size != null) addDetail('Size', formatFileSize(Number(metadata.size)));
+          addDetail('Created', metadata.createdTime);
+          addDetail('Modified', metadata.modifiedTime);
+          addDetail('Owner', metadata.ownerName || metadata.ownerEmail || 'Not available');
+          detailsLoaded = true;
+        } catch (err) {
+          showToast(`Could not load item details: ${err.message}`, 'error');
+        } finally {
+          detailsLoading = false;
+        }
+      });
+      details.append(summary, list);
+      row.append(info, actions, details);
       adminFilesTableContainer.appendChild(row);
     });
   }
 
-  async function adminRenameDriveFile(file) {
-    const currentName = String(file.name || '');
-    const newName = prompt('Rename file:', currentName);
+  async function refreshAdminFileList() {
+    if (adminTrashMode) {
+      await loadAdminTrash();
+      return;
+    }
+    await strictRefresh();
+    renderAdminFolderOptions();
+    renderAdminFilesTable();
+  }
+
+  async function adminRenameDriveItem(entry) {
+    const currentName = String(entry.item.name || '');
+    const newName = prompt(`Rename ${entry.itemType}:`, currentName);
     if (newName === null) return;
     const trimmedName = newName.trim();
     if (!trimmedName) {
-      showToast('File name cannot be empty', 'error');
+      showToast('Name cannot be empty', 'error');
       return;
     }
     if (trimmedName === currentName) return;
     try {
-      await postCommand('adminRenameFile', {
+      await postCommand(entry.itemType === 'folder' ? 'adminRenameFolder' : 'adminRenameFile', {
         adminKey: currentAdminPass,
-        fileId: String(file.id),
+        fileId: String(entry.item.id),
+        folderId: String(entry.item.id),
+        itemType: entry.itemType,
         name: trimmedName
       });
-      showToast('File renamed successfully', 'success');
-      await strictRefresh();
-      renderAdminFilesTable();
+      showToast(`${entry.itemType === 'folder' ? 'Folder' : 'File'} renamed successfully`, 'success');
+      await refreshAdminFileList();
     } catch (err) {
-      showToast(`Could not rename file: ${err.message}`, 'error');
+      showToast(`Could not rename ${entry.itemType}: ${err.message}`, 'error');
     }
   }
 
-  async function adminDeleteDriveFile(file) {
-    const name = String(file.name || 'this file');
-    if (!confirm(`Delete "${name}"? This action cannot be undone.`)) return;
+  async function trashAdminItem(entry) {
+    const name = String(entry.item.name || 'this item');
+    if (!confirm(`Move "${name}" to trash? You can restore it later.`)) return;
     try {
-      await postCommand('adminDeleteFile', {
+      await postCommand(entry.itemType === 'folder' ? 'adminTrashFolder' : 'adminTrashFile', {
         adminKey: currentAdminPass,
-        fileId: String(file.id)
+        itemId: String(entry.item.id),
+        fileId: String(entry.item.id),
+        folderId: String(entry.item.id),
+        itemType: entry.itemType
       });
-      showToast('File deleted successfully', 'success');
-      await strictRefresh();
-      renderAdminFilesTable();
+      showToast(`Moved "${name}" to trash`, 'success');
+      await refreshAdminFileList();
     } catch (err) {
-      showToast(`Could not delete file: ${err.message}`, 'error');
+      showToast(`Could not move item to trash: ${err.message}`, 'error');
     }
+  }
+
+  async function restoreAdminItem(entry) {
+    try {
+      await postCommand('adminRestoreItem', {
+        adminKey: currentAdminPass,
+        itemId: String(entry.item.id),
+        itemType: entry.itemType
+      });
+      showToast(`Restored "${entry.item.name || 'item'}"`, 'success');
+      await loadAdminTrash();
+    } catch (err) {
+      showToast(`Could not restore item: ${err.message}`, 'error');
+    }
+  }
+
+  async function permanentlyDeleteAdminItem(entry) {
+    const name = String(entry.item.name || 'this item');
+    if (!confirm(`Permanently delete "${name}"? This cannot be undone.`)) return;
+    try {
+      await postCommand('adminPermanentDeleteItem', {
+        adminKey: currentAdminPass,
+        itemId: String(entry.item.id),
+        itemType: entry.itemType
+      });
+      showToast(`Permanently deleted "${name}"`, 'success');
+      await loadAdminTrash();
+    } catch (err) {
+      showToast(`Could not permanently delete item: ${err.message}`, 'error');
+    }
+  }
+
+  async function copyAdminItemLink(item, itemType) {
+    const url = itemType === 'folder'
+      ? `https://drive.google.com/drive/folders/${encodeURIComponent(item.id)}`
+      : `https://drive.google.com/file/d/${encodeURIComponent(item.id)}/view`;
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('Drive link copied; existing sharing settings are unchanged', 'success');
+    } catch (err) {
+      showToast(`Could not copy link: ${err.message}`, 'error');
+    }
+  }
+
+  async function createAdminFolder() {
+    const name = prompt('New folder name:');
+    if (name === null) return;
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      showToast('Folder name cannot be empty', 'error');
+      return;
+    }
+    try {
+      await postCommand('adminCreateFolder', {
+        adminKey: currentAdminPass,
+        parentId: document.getElementById('admin-target-folder').value || ROOT_FOLDER_ID,
+        name: trimmedName
+      });
+      showToast(`Created folder "${trimmedName}"`, 'success');
+      await refreshAdminFileList();
+    } catch (err) {
+      showToast(`Could not create folder: ${err.message}`, 'error');
+    }
+  }
+
+  async function moveSelectedAdminItems() {
+    const targetFolderId = document.getElementById('admin-target-folder').value || ROOT_FOLDER_ID;
+    const entries = getSelectedAdminEntries();
+    const allItems = collectAdminDriveItems();
+    const target = allItems.find(entry =>
+      entry.itemType === 'folder' && String(entry.item.id) === targetFolderId
+    );
+    if (entries.some(entry => entry.itemType === 'folder' &&
+      (String(entry.item.id) === targetFolderId ||
+        (target && target.ancestorIds.includes(String(entry.item.id)))))) {
+      showToast('A folder cannot be moved into itself or one of its subfolders', 'error');
+      return;
+    }
+    await runAdminBulkAction('move', entries, entry => postCommand('adminMoveItem', {
+      adminKey: currentAdminPass,
+      itemId: String(entry.item.id),
+      itemType: entry.itemType,
+      targetFolderId
+    }));
+  }
+
+  async function trashSelectedAdminItems() {
+    const entries = getSelectedAdminEntries();
+    if (!entries.length) return;
+    if (!confirm(`Move ${entries.length} selected item(s) to trash? You can restore them later.`)) return;
+    await runAdminBulkAction('trash', entries, entry => postCommand(
+      entry.itemType === 'folder' ? 'adminTrashFolder' : 'adminTrashFile',
+      {
+        adminKey: currentAdminPass,
+        itemId: String(entry.item.id),
+        fileId: String(entry.item.id),
+        folderId: String(entry.item.id),
+        itemType: entry.itemType
+      }
+    ));
+  }
+
+  function getSelectedAdminTrashEntries() {
+    return adminTrashItems
+      .filter(item => item && item.id != null && selectedAdminItemIds.has(String(item.id)))
+      .map(item => ({
+        item,
+        itemType: item.type === 'folder' ? 'folder' : 'file',
+        path: String(item.path || item.parentName || 'Trash'),
+        parentId: item.parentId || ROOT_FOLDER_ID
+      }));
+  }
+
+  async function restoreSelectedAdminItems() {
+    const entries = getSelectedAdminTrashEntries();
+    if (!entries.length) return;
+    await runAdminBulkAction('restore', entries, entry => postCommand('adminRestoreItem', {
+      adminKey: currentAdminPass,
+      itemId: String(entry.item.id),
+      itemType: entry.itemType
+    }));
+  }
+
+  async function permanentlyDeleteSelectedAdminItems() {
+    const entries = getSelectedAdminTrashEntries();
+    if (!entries.length) return;
+    if (!confirm(`Permanently delete ${entries.length} selected item(s)? This cannot be undone.`)) return;
+    await runAdminBulkAction('permanent delete', entries, entry => postCommand('adminPermanentDeleteItem', {
+      adminKey: currentAdminPass,
+      itemId: String(entry.item.id),
+      itemType: entry.itemType
+    }));
+  }
+
+  async function runAdminBulkAction(label, entries, action) {
+    let completed = 0;
+    const failures = [];
+    for (const entry of entries) {
+      try {
+        await action(entry);
+        completed++;
+      } catch (err) {
+        failures.push(`${entry.item.name || entry.item.id}: ${err.message}`);
+      }
+    }
+    selectedAdminItemIds.clear();
+    if (failures.length) {
+      showToast(`${label}: ${completed} completed, ${failures.length} failed. ${failures[0]}`, 'error');
+    } else {
+      showToast(`${label}: ${completed} item(s) completed`, 'success');
+    }
+    await refreshAdminFileList();
+  }
+
+  function getSelectedAdminEntries() {
+    const entries = collectAdminDriveItems().filter(entry => selectedAdminItemIds.has(String(entry.item.id)));
+    return entries.filter(entry => !entries.some(parent =>
+      parent !== entry &&
+      parent.itemType === 'folder' &&
+      entry.ancestorIds.includes(String(parent.item.id))
+    ));
+  }
+
+  function downloadSelectedAdminItems() {
+    const allItems = collectAdminDriveItems();
+    const selected = allItems.filter(entry => selectedAdminItemIds.has(String(entry.item.id)));
+    const fileMap = new Map();
+    selected.forEach(entry => {
+      if (entry.itemType === 'file') fileMap.set(String(entry.item.id), entry.item);
+      else allItems.forEach(child => {
+        if (child.itemType === 'file' && child.ancestorIds.includes(String(entry.item.id))) {
+          fileMap.set(String(child.item.id), child.item);
+        }
+      });
+    });
+    if (!fileMap.size) {
+      showToast('No downloadable files are selected', 'error');
+      return;
+    }
+    [...fileMap.values()].forEach((file, index) => {
+      window.setTimeout(() => downloadFile(file), index * 250);
+    });
+    showToast(`Started ${fileMap.size} download(s). Your browser may ask to allow multiple downloads.`, 'info');
   }
 
   /* HELPERS & SHORTCUTS */
@@ -2741,6 +3403,11 @@
     renderCurrentFileList();
   };
   searchBar.addEventListener('input', renderCurrentFileList);
+  clearSearchButton.onclick = () => {
+    searchBar.value = '';
+    renderCurrentFileList();
+    searchBar.focus();
+  };
   document.getElementById('favorites-filter').onclick = e => {
     favoritesOnly = !favoritesOnly;
     e.currentTarget.classList.toggle('active', favoritesOnly);
@@ -2799,8 +3466,38 @@
     }
   };
   document.getElementById('admin-file-search').addEventListener('input', renderAdminFilesTable);
+  document.getElementById('admin-file-type-filter').addEventListener('change', renderAdminFilesTable);
+  document.getElementById('admin-file-sort').addEventListener('change', renderAdminFilesTable);
+  document.getElementById('admin-create-folder-btn').onclick = createAdminFolder;
+  document.getElementById('admin-upload-files-btn').onclick = openAdminUpload;
+  document.getElementById('admin-move-selected-btn').onclick = moveSelectedAdminItems;
+  document.getElementById('admin-download-selected-btn').onclick = downloadSelectedAdminItems;
+  document.getElementById('admin-trash-selected-btn').onclick = trashSelectedAdminItems;
+  document.getElementById('admin-restore-selected-btn').onclick = restoreSelectedAdminItems;
+  document.getElementById('admin-permanent-delete-selected-btn').onclick = permanentlyDeleteSelectedAdminItems;
+  document.getElementById('admin-clear-selection-btn').onclick = () => {
+    selectedAdminItemIds.clear();
+    renderAdminFilesTable();
+  };
+  document.getElementById('admin-select-visible-btn').onclick = () => {
+    const visibleIds = [...adminFilesTableContainer.querySelectorAll('.admin-file-select')]
+      .map(checkbox => checkbox.dataset.itemId);
+    const allSelected = visibleIds.length && visibleIds.every(id => selectedAdminItemIds.has(id));
+    if (allSelected) visibleIds.forEach(id => selectedAdminItemIds.delete(id));
+    else visibleIds.forEach(id => selectedAdminItemIds.add(id));
+    renderAdminFilesTable();
+  };
+  document.getElementById('admin-trash-view-btn').onclick = async () => {
+    adminTrashMode = !adminTrashMode;
+    selectedAdminItemIds.clear();
+    updateAdminSelectionControls([]);
+    if (adminTrashMode) await loadAdminTrash();
+    else renderAdminFilesTable();
+  };
   document.getElementById('initial-load-retry').onclick = strictRefresh;
-  document.getElementById('refresh-btn').onclick = strictRefresh;
+  document.getElementById('refresh-btn').title = 'Reload workspace (Ctrl+R)';
+  document.getElementById('refresh-btn').setAttribute('aria-label', 'Reload workspace');
+  document.getElementById('refresh-btn').onclick = () => window.location.reload();
   document.getElementById('sidebar-toggle-btn').onclick = () => {
     const isOpen = !sidebar.classList.contains('open');
     sidebar.classList.toggle('open', isOpen);
