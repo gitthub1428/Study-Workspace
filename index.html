@@ -803,21 +803,25 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
+      gap: 10px;
+      padding: 10px 12px;
       border: 1px solid rgba(255,255,255,.12);
-      border-radius: 10px;
+      border-radius: 12px;
       background: #1d1d24;
       color: #f5f5f7;
+      transition: border-color .2s ease, background .2s ease;
     }
 
-    .admin-file-info { display: flex; align-items: flex-start; gap: 11px; min-width: 0; }
-    .admin-file-icon { flex: 0 0 26px; width: 26px; text-align: center; font-size: 20px; line-height: 1.3; }
-    .admin-file-name { display: block; color: #fff; font-size: 14px; font-weight: 650; line-height: 1.45; overflow-wrap: anywhere; white-space: normal; }
-    .admin-file-path { display: block; margin-top: 3px; color: #c5c5d0; font-size: 11px; line-height: 1.45; overflow-wrap: anywhere; }
-    .admin-file-kind { display: inline-flex; margin-top: 6px; padding: 2px 7px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; color: #d8d8e0; font-size: 10px; }
-    .admin-file-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
-    .admin-file-actions button { height: 32px; width: auto; min-width: 0; padding: 0 10px; font-size: 11px; }
+    .admin-file-row:hover { border-color: rgba(255,255,255,.24); background: #23232c; }
+    .admin-file-info { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+    .admin-file-icon { flex: 0 0 24px; width: 24px; text-align: center; font-size: 18px; line-height: 1.4; }
+    .admin-file-name { display: block; color: #fff; font-size: 13px; font-weight: 650; line-height: 1.4; overflow-wrap: anywhere; white-space: normal; }
+    .admin-file-path { display: block; margin-top: 3px; color: #b7b7c4; font-size: 10px; line-height: 1.4; overflow-wrap: anywhere; }
+    .admin-file-kind { display: inline-flex; margin-top: 5px; padding: 2px 7px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; color: #d8d8e0; font-size: 10px; }
+    .admin-file-actions { display: flex; align-items: center; justify-content: flex-end; gap: 5px; flex-wrap: wrap; }
+    .admin-file-actions button { height: 30px; width: auto; min-width: 0; padding: 0 9px; font-size: 10px; }
+    .admin-file-actions .admin-file-delete { color: #fecaca; border-color: rgba(248,113,113,.35); }
+    .admin-file-actions .admin-file-delete:hover { background: rgba(127,29,29,.55); border-color: rgba(248,113,113,.65); }
     .admin-files-empty { padding: 22px 14px; color: #e0e0e6; text-align: center; font-size: 13px; }
 
     #initial-loading-screen {
@@ -917,6 +921,11 @@
       main { top: 104px; left: 8px; right: 8px; bottom: 8px; }
       #sidebar { top: 104px; left: -320px; height: calc(100dvh - 112px); }
       #sidebar.open { left: 8px; }
+    }
+
+    @media(max-width: 560px) {
+      .admin-file-row { grid-template-columns: minmax(0, 1fr); }
+      .admin-file-actions { justify-content: flex-start; }
     }
 
     @media(max-width: 360px) {
@@ -1096,10 +1105,10 @@
     <div id="admin-panel-files" style="display: block;">
       <div class="admin-files-toolbar">
         <div>
-          <div style="font-size:15px;font-weight:650;color:#fff;">Drive files and folders</div>
+          <div style="font-size:15px;font-weight:650;color:#fff;">Manage Drive files</div>
           <div id="admin-files-count" class="admin-files-count" role="status" aria-live="polite">Loading Drive items...</div>
         </div>
-        <input type="search" id="admin-file-search" class="admin-files-search" aria-label="Search all Drive file and folder names" placeholder="Search by name or folder path…">
+        <input type="search" id="admin-file-search" class="admin-files-search" aria-label="Search Drive file names and folder paths" placeholder="Search by name or folder path…">
       </div>
       <div id="admin-files-table-container" aria-label="Drive files and folders"></div>
     </div>
@@ -1789,7 +1798,15 @@
         row.tabIndex = 0;
         row.setAttribute('role', 'button');
         row.setAttribute('aria-expanded', String(isExpanded));
-        row.innerHTML = `<span class="arrow">▶</span><span class="icon">${item.isDbFolder ? '📝' : '📁'}</span><span>${item.name}</span>`;
+        const arrow = document.createElement('span');
+        arrow.className = 'arrow';
+        arrow.textContent = '▶';
+        const icon = document.createElement('span');
+        icon.className = 'icon';
+        icon.textContent = item.isDbFolder ? '📝' : '📁';
+        const label = document.createElement('span');
+        label.textContent = String(item.name || 'Unnamed folder');
+        row.append(arrow, icon, label);
 
         const children = document.createElement('div');
         children.className = `folder-group${isExpanded ? ' open' : ''}`;
@@ -1820,7 +1837,13 @@
         row.setAttribute('role', 'button');
         row.setAttribute('aria-label', `Open ${String(item.name || 'Unnamed file')}`);
         if (favoriteFileIds.has(String(item.id))) row.classList.add('favorite');
-        row.innerHTML = `<span class="icon">${getIcon(item.mimeType, item.isDbPad)}</span><span>${item.name}</span>`;
+        const icon = document.createElement('span');
+        icon.className = 'icon';
+        icon.textContent = getIcon(item.mimeType, item.isDbPad);
+        const label = document.createElement('span');
+        label.className = 'item-label';
+        label.textContent = String(item.name || 'Unnamed file');
+        row.append(icon, label);
         row.onclick = (e) => {
           e.stopPropagation();
           loadFile(item.id, row, item);
@@ -2414,7 +2437,12 @@
       card.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:10px 14px; margin-bottom:6px; flex-wrap:wrap; gap:8px;';
       
       const leftInfo = document.createElement('div');
-      leftInfo.innerHTML = `<strong>📝 ${doc.title}</strong> <span style="font-size:11px; color:#aaa;">(v${doc.version || 1}) - ${doc.isLocked ? '🔒 Locked' : '🔓 Unlocked'}</span>`;
+      const title = document.createElement('strong');
+      title.textContent = `📝 ${String(doc.title || 'Untitled pad')}`;
+      const details = document.createElement('span');
+      details.style.cssText = 'font-size:11px; color:#aaa;';
+      details.textContent = ` (v${doc.version || 1}) - ${doc.isLocked ? '🔒 Locked' : '🔓 Unlocked'}`;
+      leftInfo.append(title, details);
 
       const btnGroup = document.createElement('div');
       btnGroup.style.cssText = 'display:flex; gap:6px;';
@@ -2458,34 +2486,114 @@
     if (!adminFilesTableContainer) return;
     const search = document.getElementById('admin-file-search');
     const query = String(search && search.value || '').trim().toLowerCase();
-    const files = allFlatFiles.filter(file => !query || String(file.name || '').toLowerCase().includes(query));
+    const files = [];
+    const collectFiles = (items, folderPath = '') => {
+      (Array.isArray(items) ? items : []).forEach(item => {
+        if (!item || typeof item !== 'object') return;
+        if (item.type === 'folder') {
+          if (!item.isDbFolder) {
+            const name = String(item.name || 'Unnamed folder');
+            collectFiles(item.children, folderPath ? `${folderPath} / ${name}` : name);
+          }
+          return;
+        }
+        if (item.type === 'file' && !item.isDbPad) {
+          files.push({ file: item, path: folderPath || 'My Drive' });
+        }
+      });
+    };
+    collectFiles(fullTreeData);
+    const filteredFiles = files.filter(({ file, path }) =>
+      !query || `${String(file.name || '')} ${path}`.toLowerCase().includes(query)
+    );
     const count = document.getElementById('admin-files-count');
-    if (count) count.textContent = query ? `Showing ${files.length} of ${allFlatFiles.length} files` : `${allFlatFiles.length} files`;
+    if (count) count.textContent = query
+      ? `Showing ${filteredFiles.length} of ${files.length} Drive files`
+      : `${files.length} Drive files`;
     adminFilesTableContainer.replaceChildren();
-    if (!files.length) {
+    if (!filteredFiles.length) {
       const empty = document.createElement('p');
       empty.className = 'admin-files-empty';
       empty.textContent = query ? 'No files match that search.' : 'No Drive files are available yet.';
       adminFilesTableContainer.appendChild(empty);
       return;
     }
-    files.forEach(file => {
+    filteredFiles.forEach(({ file, path }) => {
       const row = document.createElement('div');
       row.className = 'admin-file-row';
+      const info = document.createElement('div');
+      info.className = 'admin-file-info';
+      const icon = document.createElement('span');
+      icon.className = 'admin-file-icon';
+      icon.textContent = getIcon(file.mimeType, false);
+      const metadata = document.createElement('div');
+      metadata.style.minWidth = '0';
       const name = document.createElement('strong');
       name.className = 'admin-file-name';
       name.textContent = String(file.name || 'Unnamed file');
+      const location = document.createElement('span');
+      location.className = 'admin-file-path';
+      location.textContent = path;
+      metadata.append(name, location);
+      info.append(icon, metadata);
       const actions = document.createElement('div');
       actions.className = 'admin-file-actions';
-      const open = document.createElement('button');
-      open.type = 'button';
-      open.className = 'neu-btn';
-      open.textContent = 'Open';
-      open.onclick = () => window.open(getViewerSource(file.id, file), '_blank', 'noopener');
-      actions.appendChild(open);
-      row.append(name, actions);
+      const addAction = (label, action, className = '') => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `neu-btn${className ? ` ${className}` : ''}`;
+        button.textContent = label;
+        button.onclick = action;
+        actions.appendChild(button);
+        return button;
+      };
+      addAction('Open', () => window.open(getViewerSource(file.id, file), '_blank', 'noopener'));
+      addAction('Download', () => downloadFile(file));
+      addAction('Rename', () => adminRenameDriveFile(file));
+      addAction('Delete', () => adminDeleteDriveFile(file), 'admin-file-delete');
+      row.append(info, actions);
       adminFilesTableContainer.appendChild(row);
     });
+  }
+
+  async function adminRenameDriveFile(file) {
+    const currentName = String(file.name || '');
+    const newName = prompt('Rename file:', currentName);
+    if (newName === null) return;
+    const trimmedName = newName.trim();
+    if (!trimmedName) {
+      showToast('File name cannot be empty', 'error');
+      return;
+    }
+    if (trimmedName === currentName) return;
+    try {
+      await postCommand('adminRenameFile', {
+        adminKey: currentAdminPass,
+        fileId: String(file.id),
+        name: trimmedName
+      });
+      showToast('File renamed successfully', 'success');
+      await strictRefresh();
+      renderAdminFilesTable();
+    } catch (err) {
+      showToast(`Could not rename file: ${err.message}`, 'error');
+    }
+  }
+
+  async function adminDeleteDriveFile(file) {
+    const name = String(file.name || 'this file');
+    if (!confirm(`Delete "${name}"? This action cannot be undone.`)) return;
+    try {
+      await postCommand('adminDeleteFile', {
+        adminKey: currentAdminPass,
+        fileId: String(file.id)
+      });
+      showToast('File deleted successfully', 'success');
+      await strictRefresh();
+      renderAdminFilesTable();
+    } catch (err) {
+      showToast(`Could not delete file: ${err.message}`, 'error');
+    }
   }
 
   /* HELPERS & SHORTCUTS */
