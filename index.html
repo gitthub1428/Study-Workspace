@@ -596,6 +596,30 @@
 
     .toast.error { border-color: #f87171; }
     .toast.success { border-color: #4ade80; }
+    .temporary-upload-settings {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      background: var(--glass-bg);
+      color: var(--text-main);
+      font-size: 12px;
+    }
+    .temporary-upload-settings input[type="number"],
+    .temporary-upload-settings input[type="datetime-local"] {
+      min-height: 36px;
+      max-width: 100%;
+      padding: 6px 9px;
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      background: var(--bg-base);
+      color: var(--text-main);
+      font: inherit;
+    }
+    .temporary-expiry-option { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .temporary-countdown { color: var(--text-muted); font-size: 11px; }
+    .temporary-upload-settings [hidden] { display: none !important; }
 
     #debug-panel {
       position: fixed;
@@ -744,6 +768,19 @@
     .tab-item .tab-close:hover {
       opacity: 1;
       background: rgba(255, 255, 255, 0.2);
+    }
+
+    .tab-expiry-countdown {
+      flex: 0 0 auto;
+      margin-left: auto;
+      padding: 5px 8px;
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      background: var(--glass-bg);
+      color: var(--text-main);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
 
     #iframe-wrapper {
@@ -1081,6 +1118,30 @@
       <button id="create-folder-btn" type="button" class="neu-btn" style="height:38px; font-size:12px;">+ Folder</button>
     </div>
 
+    <div class="temporary-upload-settings">
+      <label style="display:flex; align-items:center; gap:8px; font-weight:600;">
+        <input type="checkbox" id="temporary-upload-toggle">
+        Auto-delete after upload
+      </label>
+      <div id="temporary-upload-options" hidden>
+        <div style="display:grid; gap:9px;">
+          <label class="temporary-expiry-option">
+            <input type="radio" name="temporary-expiry-mode" value="duration" checked>
+            Delete after
+            <input type="number" id="temporary-expiry-minutes" min="1" step="1" value="60" aria-label="Minutes until automatic deletion">
+            minutes
+          </label>
+          <label class="temporary-expiry-option">
+            <input type="radio" name="temporary-expiry-mode" value="date">
+            Delete at
+            <input type="datetime-local" id="temporary-expiry-date" aria-label="Automatic deletion date and time">
+          </label>
+          <div id="temporary-expiry-summary" role="status" aria-live="polite" style="color:var(--text-muted);"></div>
+          <small>Expired files are permanently deleted automatically. Cleanup may take up to about a minute. Deletion cannot remove copies already downloaded or synced.</small>
+        </div>
+      </div>
+    </div>
+
     <!-- Reactive Dropzone Canvas -->
     <div class="dropzone neu-inset" id="upload-dropzone" tabindex="0" style="padding: 28px 16px; text-align: center; cursor: pointer; transition: all 0.25s ease;">
       <svg class="svg-icon" viewBox="0 0 24 24" style="width: 36px; height: 36px; stroke: #ffffff; margin-bottom: 8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -1196,7 +1257,22 @@
     <div class="admin-tabs" style="display:flex; gap:8px; margin-top:12px; margin-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
       <button id="admin-tab-pads" type="button" class="neu-btn" style="flex:1; height:36px; font-size:12px; font-weight:600;">📝 Database Pads</button>
       <button id="admin-tab-files" type="button" class="neu-btn neu-btn-primary" style="flex:1; height:36px; font-size:12px; font-weight:600;">🗂️ Drive Files Master List</button>
+      <button id="admin-tab-temporary" type="button" class="neu-btn" style="flex:1; height:36px; font-size:12px; font-weight:600;">⏱️ Temporary Files</button>
       <button id="admin-tab-system" type="button" class="neu-btn" style="flex:1; height:36px; font-size:12px; font-weight:600;">⚙️ System Controls</button>
+    </div>
+
+    <div id="admin-panel-temporary" style="display:none;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+        <div>
+          <div style="font-size:15px;font-weight:650;color:var(--text-main);">Automatic cleanup is active</div>
+          <div style="font-size:12px;color:var(--text-muted);">Expired files are permanently deleted by the server, with cleanup running every minute.</div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="admin-run-temporary-cleanup-btn" type="button" class="neu-btn neu-btn-primary">Run cleanup now</button>
+          <button id="admin-refresh-temporary-btn" type="button" class="neu-btn">Refresh</button>
+        </div>
+      </div>
+      <div id="admin-temporary-files-container" aria-label="Temporary files and expiration times"></div>
     </div>
 
     <!-- TAB 1: DATABASE PADS -->
@@ -1329,7 +1405,7 @@
   /* =========================================================
      DRIVE WORKSPACE JS ENGINE (ULTRA-PREMIUM EDITION)
      ========================================================= */
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwAAaiT4ZQWMLELgyDYWExAotuoJ3Prdda1t1Mpz2-d4A627yGPXTXJaeFHyTJB3HJMPg/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwL5aktIz2OfoDs39r41wx-ruBt-Wx0M3tO-9FRhuVvnb7EffEIJK_ojbMbBJNLIzsvzg/exec";
   const ROOT_FOLDER_ID = "1ztsTJCXPBFzIYeOLSyZkZebjlTYyB1JK";
   const CACHE_KEY = "drive_tree_cache_v8";
   const RECENT_FILES_KEY = "drive_recent_files_v1";
@@ -1464,6 +1540,14 @@
 
     const activeTab = openTabs.find(tab => String(tab.id) === String(activeTabId));
     if (activeTab) {
+      if (activeTab.file && activeTab.file.expiresAt) {
+        const countdown = document.createElement('span');
+        countdown.className = 'tab-expiry-countdown';
+        countdown.dataset.expiresAt = String(activeTab.file.expiresAt);
+        countdown.setAttribute('role', 'status');
+        countdown.setAttribute('aria-label', 'Time remaining before automatic deletion');
+        tabBar.appendChild(countdown);
+      }
       const openNewTabButton = document.createElement('button');
       openNewTabButton.type = 'button';
       openNewTabButton.className = 'tab-open-new';
@@ -2061,6 +2145,13 @@
         label.className = 'item-label';
         label.textContent = String(item.name || 'Unnamed file');
         row.append(icon, label);
+        if (item.expiresAt) {
+          const countdown = document.createElement('span');
+          countdown.className = 'temporary-countdown';
+          countdown.dataset.expiresAt = String(item.expiresAt);
+          countdown.textContent = 'Expiry timer';
+          row.appendChild(countdown);
+        }
         row.onclick = (e) => {
           e.stopPropagation();
           loadFile(item.id, row, item);
@@ -2174,6 +2265,12 @@
       const metadata = document.createElement('span');
       metadata.className = 'search-result-meta';
       metadata.append(label, path);
+      if (file.expiresAt) {
+        const countdown = document.createElement('span');
+        countdown.className = 'temporary-countdown';
+        countdown.dataset.expiresAt = String(file.expiresAt);
+        metadata.appendChild(countdown);
+      }
       row.classList.add('search-result-row');
       row.append(icon, metadata);
       row.onclick = () => loadFile(file.id, row, file);
@@ -2243,12 +2340,15 @@
 
   const adminTabPads = document.getElementById('admin-tab-pads');
   const adminTabFiles = document.getElementById('admin-tab-files');
+  const adminTabTemporary = document.getElementById('admin-tab-temporary');
   const adminTabSystem = document.getElementById('admin-tab-system');
   const adminPanelPads = document.getElementById('admin-panel-pads');
   const adminPanelFiles = document.getElementById('admin-panel-files');
+  const adminPanelTemporary = document.getElementById('admin-panel-temporary');
   const adminPanelSystem = document.getElementById('admin-panel-system');
   const adminPadsTableContainer = document.getElementById('admin-pads-table-container');
   const adminFilesTableContainer = document.getElementById('admin-files-table-container');
+  const adminTemporaryFilesContainer = document.getElementById('admin-temporary-files-container');
 
   function openAdminLoginModal() {
     if (adminPassInput) adminPassInput.value = '';
@@ -2270,16 +2370,19 @@
   if (closeAdminDashBtn) closeAdminDashBtn.onclick = closeAdminDashModal;
 
   function switchAdminTab(tab) {
-    if (!adminTabPads || !adminTabFiles || !adminTabSystem) return;
+    if (!adminTabPads || !adminTabFiles || !adminTabTemporary || !adminTabSystem) return;
     adminTabPads.className = 'neu-btn' + (tab === 'pads' ? ' neu-btn-primary' : '');
     adminTabFiles.className = 'neu-btn' + (tab === 'files' ? ' neu-btn-primary' : '');
+    adminTabTemporary.className = 'neu-btn' + (tab === 'temporary' ? ' neu-btn-primary' : '');
     adminTabSystem.className = 'neu-btn' + (tab === 'system' ? ' neu-btn-primary' : '');
 
     if (adminPanelPads) adminPanelPads.style.display = (tab === 'pads' ? 'block' : 'none');
     if (adminPanelFiles) adminPanelFiles.style.display = (tab === 'files' ? 'block' : 'none');
+    if (adminPanelTemporary) adminPanelTemporary.style.display = (tab === 'temporary' ? 'block' : 'none');
     if (adminPanelSystem) adminPanelSystem.style.display = (tab === 'system' ? 'block' : 'none');
 
     if (tab === 'pads') loadAdminPadsTable();
+    if (tab === 'temporary') loadAdminTemporaryFiles();
     if (tab === 'files') {
       renderAdminFolderOptions();
       if (adminTrashMode) loadAdminTrash();
@@ -2289,7 +2392,48 @@
 
   if (adminTabPads) adminTabPads.onclick = () => switchAdminTab('pads');
   if (adminTabFiles) adminTabFiles.onclick = () => switchAdminTab('files');
+  if (adminTabTemporary) adminTabTemporary.onclick = () => switchAdminTab('temporary');
   if (adminTabSystem) adminTabSystem.onclick = () => switchAdminTab('system');
+  const refreshTemporaryFilesButton = document.getElementById('admin-refresh-temporary-btn');
+  if (refreshTemporaryFilesButton) {
+    refreshTemporaryFilesButton.onclick = () => loadAdminTemporaryFiles(true);
+  }
+  const runTemporaryCleanupButton = document.getElementById('admin-run-temporary-cleanup-btn');
+  if (runTemporaryCleanupButton) {
+    runTemporaryCleanupButton.onclick = async () => {
+      if (!currentAdminPass) return;
+      runTemporaryCleanupButton.disabled = true;
+      try {
+        const result = await postCommand('adminRunTemporaryCleanup', {adminKey: currentAdminPass});
+        const cleanup = result.cleanup;
+        if (!cleanup || !Array.isArray(cleanup.failed)) {
+          throw new Error('The server did not return a cleanup result');
+        }
+        if (cleanup.failed.length) {
+          const firstFailure = cleanup.failed[0];
+          showToast(
+            `Deleted ${cleanup.deleted} file(s); ${cleanup.failed.length} failed. ${firstFailure.name}: ${firstFailure.message}`,
+            'error'
+          );
+        } else if (cleanup.deleted) {
+          showToast(`Cleanup complete: permanently deleted ${cleanup.deleted} expired file(s)`, 'success');
+        } else {
+          showToast(
+            cleanup.remaining
+              ? `No expired files were found. ${cleanup.remaining} temporary file(s) have not expired yet.`
+              : 'No temporary files are scheduled for deletion.',
+            'info'
+          );
+        }
+        await strictRefresh();
+        await loadAdminTemporaryFiles();
+      } catch (err) {
+        showToast(`Cleanup failed: ${err.message}`, 'error');
+      } finally {
+        runTemporaryCleanupButton.disabled = false;
+      }
+    };
+  }
 
   if (confirmAdminLoginBtn) {
     confirmAdminLoginBtn.onclick = async () => {
@@ -2341,12 +2485,74 @@
   const uploadStartButton = document.getElementById('start-queue-upload-btn');
   const uploadFolderList = document.getElementById('modal-folder-list');
   const uploadBreadcrumb = document.getElementById('modal-breadcrumb');
+  const temporaryUploadToggle = document.getElementById('temporary-upload-toggle');
+  const temporaryUploadOptions = document.getElementById('temporary-upload-options');
+  const temporaryExpiryMinutes = document.getElementById('temporary-expiry-minutes');
+  const temporaryExpiryDate = document.getElementById('temporary-expiry-date');
+  const temporaryExpirySummary = document.getElementById('temporary-expiry-summary');
 
   function openUploadModal() {
     uploadDestinationId = ROOT_FOLDER_ID;
+    if (temporaryUploadToggle) temporaryUploadToggle.checked = false;
+    if (temporaryUploadOptions) temporaryUploadOptions.hidden = true;
     renderUploadFolders();
     uploadModal.classList.add('active');
   }
+
+  function getSelectedTemporaryExpiryMode() {
+    const selected = document.querySelector('input[name="temporary-expiry-mode"]:checked');
+    return selected ? selected.value : 'duration';
+  }
+
+  function updateTemporaryExpirySummary() {
+    if (!temporaryExpirySummary) return;
+    if (!temporaryUploadToggle.checked) {
+      temporaryExpirySummary.textContent = 'Files will be kept normally.';
+      return;
+    }
+    if (getSelectedTemporaryExpiryMode() === 'duration') {
+      const minutes = Number(temporaryExpiryMinutes.value);
+      temporaryExpirySummary.textContent = Number.isInteger(minutes) && minutes >= 1
+        ? `Each file expires ${minutes} minute${minutes === 1 ? '' : 's'} after its upload completes.`
+        : 'Enter a whole number of minutes (at least 1).';
+      return;
+    }
+    const timestamp = Date.parse(temporaryExpiryDate.value);
+    temporaryExpirySummary.textContent = Number.isFinite(timestamp)
+      ? `Files expire at ${new Date(timestamp).toLocaleString()}.`
+      : 'Choose the date and time when the files should expire.';
+  }
+
+  function getTemporaryUploadPayload() {
+    if (!temporaryUploadToggle.checked) return {autoDeleteMode: 'off'};
+    if (getSelectedTemporaryExpiryMode() === 'duration') {
+      const minutes = Number(temporaryExpiryMinutes.value);
+      if (!Number.isInteger(minutes) || minutes < 1) {
+        throw new Error('Enter a whole number of minutes, starting at 1.');
+      }
+      return {autoDeleteMode: 'duration', expiresInMinutes: minutes};
+    }
+    const expiresAt = Date.parse(temporaryExpiryDate.value);
+    if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+      throw new Error('Choose a future date and time for automatic deletion.');
+    }
+    return {autoDeleteMode: 'date', expiresAt};
+  }
+
+  temporaryUploadToggle.addEventListener('change', () => {
+    temporaryUploadOptions.hidden = !temporaryUploadToggle.checked;
+    updateTemporaryExpirySummary();
+    showToast(
+      temporaryUploadToggle.checked ? 'Auto-delete enabled for these uploads' : 'Auto-delete disabled',
+      'info'
+    );
+  });
+  document.querySelectorAll('input[name="temporary-expiry-mode"]').forEach(input => {
+    input.addEventListener('change', updateTemporaryExpirySummary);
+  });
+  temporaryExpiryMinutes.addEventListener('input', updateTemporaryExpirySummary);
+  temporaryExpiryDate.addEventListener('input', updateTemporaryExpirySummary);
+  updateTemporaryExpirySummary();
 
   function openAdminUpload() {
     if (!currentAdminPass) return;
@@ -2516,11 +2722,12 @@
     return parentId;
   }
 
-  async function uploadOneFile(file, parentId, progressBar) {
+  async function uploadOneFile(file, parentId, progressBar, temporaryExpiry) {
     const common = {
       parentId,
       filename: String(file.name || 'unnamed-file'),
-      mimeType: file.type || 'application/octet-stream'
+      mimeType: file.type || 'application/octet-stream',
+      ...temporaryExpiry
     };
     const directLimit = 35 * 1024 * 1024;
     if (file.size <= directLimit) {
@@ -2539,6 +2746,7 @@
         start: offset,
         end: end - 1,
         total: file.size,
+        ...temporaryExpiry,
         base64: await readBlobAsBase64(file.slice(offset, end))
       });
       progressBar.style.width = `${Math.round(end / file.size * 100)}%`;
@@ -2547,6 +2755,13 @@
 
   async function startQueuedUploads() {
     if (!uploadQueue.length || inFlightActions.has('upload')) return;
+    let temporaryExpiry;
+    try {
+      temporaryExpiry = getTemporaryUploadPayload();
+    } catch (err) {
+      showToast(err.message, 'error');
+      return;
+    }
     inFlightActions.add('upload');
     const pending = [...uploadQueue];
     const failed = [];
@@ -2569,7 +2784,7 @@
         uploadProgressList.appendChild(item);
         try {
           const parentId = await createUploadSubfolders(file, folderCache);
-          await uploadOneFile(file, parentId, bar);
+          await uploadOneFile(file, parentId, bar, temporaryExpiry);
         } catch (err) {
           failed.push(file);
           item.classList.add('error');
@@ -2581,7 +2796,12 @@
       renderUploadQueue();
       if (failed.length !== pending.length) await strictRefresh();
       showToast(
-        `${pending.length - failed.length} of ${pending.length} file(s) uploaded`,
+        `${pending.length - failed.length} of ${pending.length} file(s) uploaded` +
+          (temporaryExpiry.autoDeleteMode === 'duration'
+            ? ` · Auto-delete in ${temporaryExpiry.expiresInMinutes} minute(s) after each upload`
+            : temporaryExpiry.autoDeleteMode === 'date'
+              ? ` · Auto-delete at ${new Date(temporaryExpiry.expiresAt).toLocaleString()}`
+              : ''),
         failed.length ? 'error' : 'success'
       );
       if (failed.length) uploadModal.classList.add('active');
@@ -2679,6 +2899,98 @@
     } catch (err) {
       adminPadsTableContainer.innerHTML = `<p style="font-size:12px;color:red;">Error: ${err.message}</p>`;
     }
+  }
+
+  async function loadAdminTemporaryFiles(showConfirmation = false) {
+    if (!currentAdminPass || !adminTemporaryFilesContainer) return;
+    adminTemporaryFilesContainer.replaceChildren();
+    const loading = document.createElement('p');
+    loading.className = 'admin-files-empty';
+    loading.textContent = 'Loading temporary files…';
+    adminTemporaryFilesContainer.appendChild(loading);
+    try {
+      const result = await postCommand('adminListTemporaryFiles', {adminKey: currentAdminPass});
+      if (!Array.isArray(result.items)) throw new Error('The server did not return a valid temporary file list');
+      renderAdminTemporaryFiles(result.items);
+      if (showConfirmation) showToast('Temporary file list refreshed', 'success');
+    } catch (err) {
+      adminTemporaryFilesContainer.replaceChildren();
+      const error = document.createElement('p');
+      error.className = 'admin-files-empty';
+      error.textContent = `Could not load temporary files: ${err.message}`;
+      adminTemporaryFilesContainer.appendChild(error);
+      showToast(`Could not load temporary files: ${err.message}`, 'error');
+    }
+  }
+
+  function renderAdminTemporaryFiles(items) {
+    adminTemporaryFilesContainer.replaceChildren();
+    if (!items.length) {
+      const empty = document.createElement('p');
+      empty.className = 'admin-files-empty';
+      empty.textContent = 'There are no temporary files in this workspace.';
+      adminTemporaryFilesContainer.appendChild(empty);
+      return;
+    }
+    items.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'admin-file-row';
+      const info = document.createElement('div');
+      info.className = 'admin-file-info';
+      const icon = document.createElement('span');
+      icon.className = 'admin-file-icon';
+      icon.textContent = getIcon(item.mimeType, false);
+      const metadata = document.createElement('div');
+      metadata.style.minWidth = '0';
+      const name = document.createElement('strong');
+      name.className = 'admin-file-name';
+      name.textContent = String(item.name || 'Unnamed file');
+      const expiresAt = Number(item.expiresAt);
+      const expiry = document.createElement('span');
+      expiry.className = 'admin-file-path';
+      expiry.textContent = `Expires ${new Date(expiresAt).toLocaleString()} · `;
+      const countdown = document.createElement('span');
+      countdown.className = 'temporary-countdown';
+      countdown.dataset.expiresAt = String(expiresAt);
+      expiry.appendChild(countdown);
+      metadata.append(name, expiry);
+      info.append(icon, metadata);
+      const actions = document.createElement('div');
+      actions.className = 'admin-file-actions';
+      const cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.className = 'neu-btn';
+      cancel.textContent = 'Cancel auto-delete';
+      cancel.onclick = async () => {
+        if (!confirm(`Keep "${item.name}" in Drive and cancel its automatic deletion?`)) return;
+        try {
+          await postCommand('adminCancelTemporaryExpiry', {adminKey: currentAdminPass, fileId: item.id});
+          showToast('Automatic deletion cancelled', 'success');
+          await loadAdminTemporaryFiles();
+          await strictRefresh();
+        } catch (err) {
+          showToast(`Could not cancel automatic deletion: ${err.message}`, 'error');
+        }
+      };
+      const deleteNow = document.createElement('button');
+      deleteNow.type = 'button';
+      deleteNow.className = 'neu-btn admin-file-delete';
+      deleteNow.textContent = 'Delete now';
+      deleteNow.onclick = async () => {
+        if (!confirm(`Permanently delete "${item.name}" now? This cannot be undone.`)) return;
+        try {
+          await postCommand('adminDeleteTemporaryFile', {adminKey: currentAdminPass, fileId: item.id});
+          showToast('Temporary file permanently deleted', 'success');
+          await loadAdminTemporaryFiles();
+          await strictRefresh();
+        } catch (err) {
+          showToast(`Could not delete temporary file: ${err.message}`, 'error');
+        }
+      };
+      actions.append(cancel, deleteNow);
+      row.append(info, actions);
+      adminTemporaryFilesContainer.appendChild(row);
+    });
   }
 
   function renderAdminPadsTable(docs) {
@@ -3280,6 +3592,54 @@
     toastContainer.appendChild(toast);
     setTimeout(() => toast.remove(), 4000);
   }
+
+  function formatTemporaryCountdown(expiresAt, now = Date.now()) {
+    const remainingSeconds = Math.max(0, Math.ceil((expiresAt - now) / 1000));
+    if (!remainingSeconds) return 'Deletion pending';
+    const days = Math.floor(remainingSeconds / 86400);
+    const hours = Math.floor((remainingSeconds % 86400) / 3600);
+    const minutes = Math.floor((remainingSeconds % 3600) / 60);
+    const seconds = remainingSeconds % 60;
+    const time = [hours, minutes, seconds].map(value => String(value).padStart(2, '0')).join(':');
+    return days ? `${days}d ${time} left` : `${time} left`;
+  }
+
+  let temporaryExpiryRefreshRunning = false;
+  let lastTemporaryExpiryRefresh = 0;
+  function updateTemporaryCountdowns() {
+    const now = Date.now();
+    let cleanupMayBeComplete = false;
+    document.querySelectorAll('[data-expires-at]').forEach(element => {
+      const expiresAt = Number(element.dataset.expiresAt);
+      if (!Number.isFinite(expiresAt)) return;
+      const countdown = formatTemporaryCountdown(expiresAt, now);
+      element.textContent = element.classList.contains('tab-expiry-countdown')
+        ? `Auto-delete: ${countdown}`
+        : countdown;
+      if (now - expiresAt >= 65000) cleanupMayBeComplete = true;
+    });
+    if (cleanupMayBeComplete && !temporaryExpiryRefreshRunning && now - lastTemporaryExpiryRefresh >= 60000) {
+      temporaryExpiryRefreshRunning = true;
+      lastTemporaryExpiryRefresh = now;
+      const expiredIds = allFlatFiles
+        .filter(file => Number(file.expiresAt) > 0 && now - Number(file.expiresAt) >= 65000)
+        .map(file => String(file.id));
+      strictRefresh().finally(() => {
+        temporaryExpiryRefreshRunning = false;
+        const remainingIds = new Set(allFlatFiles.map(file => String(file.id)));
+        const removedCount = expiredIds.filter(id => !remainingIds.has(id)).length;
+        if (removedCount) {
+          showToast(
+            `${removedCount} expired temporary file(s) are no longer in the workspace`,
+            'success'
+          );
+        }
+        if (adminPanelTemporary && adminPanelTemporary.style.display !== 'none') loadAdminTemporaryFiles();
+      });
+    }
+  }
+  updateTemporaryCountdowns();
+  setInterval(updateTemporaryCountdowns, 1000);
 
   function debug(msg, err) {
     if (debugPanel) {
